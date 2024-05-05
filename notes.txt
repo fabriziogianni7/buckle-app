@@ -1,0 +1,102 @@
+// Layout of Contract:
+// version
+// imports
+// errors
+// interfaces, libraries, contracts
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// internal & private view & pure functions
+// external & public view & pure functions
+
+
+how to deploy crosschain pool in 2 diff networks?
+should I found these pools initially? maybe 
+
+I should have a function to get the minimum amount of underlying tokens I want back (?)
+
+-----
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.25;
+
+import {CCIPLocalSimulatorFork} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
+
+contract ChainlinkLocalForkTest is Test {
+    CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
+
+    uint256 sepoliaFork;
+    uint256 arbSepoliaFork;
+
+    function setUp() public {
+        string memory ETHEREUM_SEPOLIA_RPC_URL = vm.envString("ETHEREUM_SEPOLIA_RPC_URL");
+        string memory ARBITRUM_SEPOLIA_RPC_URL = vm.envString("ARBITRUM_SEPOLIA_RPC_URL");
+        sepoliaFork = vm.createSelectFork(ETHEREUM_SEPOLIA_RPC_URL);
+        arbSepoliaFork = vm.createFork(ARBITRUM_SEPOLIA_RPC_URL);
+
+        ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
+
+        //with this cheatcode, it is possible to mark the specified accounts as persistent, which means that their state is available regardless of which fork is currently active.
+        vm.makePersistent(address(ccipLocalSimulatorFork));
+    }
+
+    function testCCIPForking() public {
+        sender.transferTokensPayLINK(arbSepoliaChainSelector, alice, address(ccipBnM), amountToSend);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
+    }
+}
+
+
+
+ù
+
+
+
+
+
+
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.19;
+
+import {Script, console2} from "forge-std/Script.sol";
+import {Vm} from "forge-std/Test.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
+
+import {CCIPLocalSimulatorFork} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
+
+contract ChainlinkLocalForkHelper is Script, StdCheats {
+    CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
+
+    uint256 sepoliaFork;
+    uint256 arbSepoliaFork;
+
+    function run() public {
+        string memory ETHEREUM_SEPOLIA_RPC_URL = vm.envString("ETHEREUM_SEPOLIA_RPC_URL");
+        string memory ARBITRUM_SEPOLIA_RPC_URL = vm.envString("ARBITRUM_SEPOLIA_RPC_URL");
+        sepoliaFork = vm.createSelectFork(ETHEREUM_SEPOLIA_RPC_URL);
+        arbSepoliaFork = vm.createFork(ARBITRUM_SEPOLIA_RPC_URL);
+
+        Vm vm = new Vm();
+        ccipLocalSimulatorFork = new CCIPLocalSimulatorFork(vm);
+
+        vm.makePersistent(address(ccipLocalSimulatorFork));
+        return ccipLocalSimulatorFork;
+    }
+
+    // function testDemo() public {
+    //     sender.transferTokensPayLINK(arbSepoliaChainSelector, alice, address(ccipBnM), amountToSend);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
+    // }
+}
