@@ -11,7 +11,8 @@ contract DeployCrossChainPool is Script {
 
     function run() public returns (CrossChainPool) {
         underlying = new ERC20Mock();
-        CrossChainPool crossChainPool = new CrossChainPool(underlying, "crossChainPoolTest");
+        CrossChainPool crossChainPool =
+            new CrossChainPool(address(underlying), "crossChainPoolTest", 1, address(1), address(1));
         return crossChainPool;
     }
 }
