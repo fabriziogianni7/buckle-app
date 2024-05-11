@@ -2,7 +2,9 @@
 
 You're entering a novel use case of cross chain liquid staking protocol done with Chainlink ccip!
 
-Users can bridge (and in the future swap) tokens without minting/burning tokens on source/destination chain
+Users can bridge (and in the future swap) tokens without minting/burning tokens on source/destination chain.
+
+_Buckle App...._
 
 ## Building in Public - Live Streaming Development
 
@@ -32,3 +34,5 @@ Buckle App is like is a trustless, automated atomic swap protocol, based on pool
 | Censorship Risk | Low           | Based on CCIP which is decentralized                                            |
 | Custodial Risk  | None          | It's non custodial                                                              |
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
+
+## How does it work
