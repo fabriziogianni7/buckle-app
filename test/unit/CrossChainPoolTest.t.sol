@@ -32,7 +32,7 @@ contract CrossChainPoolTest is Test {
         underlying.mint(LP, 1000e18);
     }
 
-    function testPoolDeployment() public {
+    function testPoolDeployment() public view {
         string memory expectedName = crossChainPool.name();
         assertEq(expectedName, "crossChainPoolTest");
     }

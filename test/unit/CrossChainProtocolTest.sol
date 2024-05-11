@@ -160,7 +160,9 @@ contract CrossChainProtocolTest is Test {
         CrossChainPool(deployedSepoliaPool).teleport{value: fee}(TELEPORT_AMOUNT, valentinoRossi);
         assertEq(sepoliaUnderlying.balanceOf(address(deployedSepoliaPool)), TELEPORT_AMOUNT);
         vm.stopPrank();
+
         uint256 buckleAppFees = CrossChainPool(deployedSepoliaPool).calculateBuckleAppFees(TELEPORT_AMOUNT);
+
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
 
         assertEq(arbSepoliaUnderlying.balanceOf(valentinoRossi), TELEPORT_AMOUNT - buckleAppFees);
@@ -307,8 +309,6 @@ contract CrossChainProtocolTest is Test {
 
         vm.startPrank(LP_SEP);
 
-        uint256 valueOfOneLptBeforeDeposit = CrossChainPool(deployedSepoliaPool).getValueOfOneLpt();
-
         sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
 
         uint256 ccipFees3 = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(second_deposit_amount_on_sepolia);
@@ -320,21 +320,15 @@ contract CrossChainProtocolTest is Test {
         //// start testing the redeemal
         uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
 
-        (uint256 totaProtocolUnderlying,) = CrossChainPool(deployedSepoliaPool).getTotalProtocolBalances();
-
-        // (uint256 totalUnderlyingBal, uint256 totalLptBal) =
-        //     CrossChainPool(deployedSepoliaPool).getTotalProtocolBalances();
-
         (uint256 redeemCurrentChain, uint256 redeemCrossChain) =
             CrossChainPool(deployedSepoliaPool).calculateAmountToRedeem(currentLPSEPAmountLpt);
 
-        // uint256 totalUnderlyingOwned = redeemCurrentChain + redeemCrossChain;
-
-        (uint256 crossChainUnderlyingBalance, uint256 crossChainLiquidityPoolTokens) =
-            CrossChainPool(deployedSepoliaPool).getCrossChainBalances();
+        CrossChainPool(deployedSepoliaPool).getCrossChainBalances();
 
         uint256 totalRedeem = CrossChainPool(deployedSepoliaPool).getRedeemValueForLP(currentLPSEPAmountLpt);
 
-        assertEq(totalRedeem / 1e10, (redeemCurrentChain + redeemCrossChain) / 1e10); // it should definitelly be more precise, todo look into it
+        // assertEq(totalRedeem / 1e10, (redeemCurrentChain + redeemCrossChain) / 1e10); // it should definitelly be more precise, todo look into it
+        // (totalRedeem / 1e2) =150012499999999999
+        assertEq((totalRedeem / 1e2), (redeemCurrentChain + redeemCrossChain) / 1e2); // taking off the last decimals
     }
 }

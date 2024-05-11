@@ -33,12 +33,12 @@ contract CrossChainPoolTest is Test {
         poolFactoryDestinationChain = deployPoolFactory.run(destinationRouter, feeToken);
     }
 
-    function testPoolFactoryDeployment() public {
+    function testPoolFactoryDeployment() public view {
         assertNotEq(address(poolFactorySourceChain), address(0));
         assertNotEq(address(poolFactoryDestinationChain), address(0));
     }
 
-    function testSendAndReceiveMsg() public {
+    function testSendAndReceiveMsg() public view {
         // // send link to the contracts
         // IERC20(feeToken).transfer(address(poolFactorySourceChain), 10e18);
         // IERC20(feeToken).transfer(address(poolFactoryDestinationChain), 10e18);

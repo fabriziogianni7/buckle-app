@@ -264,7 +264,8 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
      */
     function calculateLPTinExchangeOfUnderlying(uint256 _amountOfUnderlyingToDeposit) public view returns (uint256) {
         uint256 valueOfOneLpt = getValueOfOneLpt();
-        uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e5) / valueOfOneLpt) * 1e13;
+        uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e18) / valueOfOneLpt);
+        // uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e5) / valueOfOneLpt) * 1e13;
         // // console2.log("lptAmount", lptAmount);
         return lptAmount;
     }
@@ -481,7 +482,8 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
     {
         message = Client.EVM2AnyMessage({
             receiver: abi.encode(s_crossChainPool), // receiver is the pool on destination chain
-            data: abi.encode(TELEPORT_FUNCTION_ID, _value - _fees, _fees, _to), //  the parameters to pass into deployPool
+            data: abi.encode(TELEPORT_FUNCTION_ID, _value, _fees, _to), //  the parameters to pass into deployPool
+            // data: abi.encode(TELEPORT_FUNCTION_ID, _value - _fees, _fees, _to), //  the parameters to pass into deployPool
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
@@ -558,7 +560,8 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
             return 1e18;
         }
 
-        value = ((totalCrossChainUnderlyingAmount * 1e5) / totalCrossChainLPTAmount) * 1e13;
+        // value = ((totalCrossChainUnderlyingAmount * 1e5) / totalCrossChainLPTAmount) * 1e13;
+        value = ((totalCrossChainUnderlyingAmount * 1e18) / totalCrossChainLPTAmount);
     }
 
     function getRedeemValueForLP(uint256 _lptAmount) public view returns (uint256 reedemValue) {
