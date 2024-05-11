@@ -67,10 +67,16 @@ contract CrossChainPoolTest is Test {
         vm.startPrank(LP);
         // approving LPT
         crossChainPool.approve(address(crossChainPool), valueToBurn); // i'm not sure, dbc
-        crossChainPool.redeem(valueToBurn);
+        crossChainPool.redeem(valueToBurn, LP);
         vm.stopPrank();
 
         // check that the balance of LPT is burnt correctly
         assertEq(crossChainPool.balanceOf(LP), STARTING_DEPOSIT - valueToBurn);
+    }
+
+    function testCalculatingFees() public deposited {
+        uint256 amPlusFees = crossChainPool.getCCipFeesForDeposit(1e18);
+        // should be 1e18 + 5 % of 1e18
+        assertEq(amPlusFees, 5e15);
     }
 }

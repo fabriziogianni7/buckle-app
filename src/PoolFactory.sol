@@ -28,9 +28,9 @@ import {console2} from "forge-std/Test.sol";
 import {CrossChainPool} from "./CrossChainPool.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {CCIPReceiver} from "ccip/applications/CCIPReceiver.sol";
-import {Client} from "ccip/libraries/Client.sol";
-import {IRouterClient} from "ccip/interfaces/IRouterClient.sol";
+import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
+import {Client} from "ccip/contracts/libraries/Client.sol";
+import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
 
 /**
  * @notice this contract deploy simultaneusly 2 pools on 2 networks
