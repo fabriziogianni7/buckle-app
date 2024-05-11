@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 import {CrossChainPool} from "../../src/CrossChainPool.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {DeployCrossChainPool} from "../../script/DeployCrossChainPool.s.sol";
+import {MockRouter} from "./mock/MockRouter.sol";
 
 // todo update it with real pks
 contract CrossChainPoolTest is Test {
@@ -17,19 +18,28 @@ contract CrossChainPoolTest is Test {
         // minting the underlying to user
         // create a new user and impersonate him
         vm.startPrank(LP);
+        uint256 ccipFees = 1; // simulating it
+
         // call deposit
         underlying.approve(address(crossChainPool), STARTING_DEPOSIT);
-        crossChainPool.deposit(underlying, STARTING_DEPOSIT);
+        crossChainPool.deposit{value: ccipFees}(underlying, STARTING_DEPOSIT);
+        console2.log("balance of pool after deposit", underlying.balanceOf(address(crossChainPool)));
+        assertEq(underlying.balanceOf(address(crossChainPool)), STARTING_DEPOSIT);
         vm.stopPrank();
         _;
     }
 
     function setUp() public {
+        underlying = new ERC20Mock();
+        MockRouter mockRouter = new MockRouter();
+        ERC20Mock crossChainUnderlying = new ERC20Mock();
         DeployCrossChainPool deployCrossChainPool = new DeployCrossChainPool();
-        crossChainPool = deployCrossChainPool.run();
 
-        underlying = deployCrossChainPool.underlying();
+        crossChainPool =
+            deployCrossChainPool.run(address(underlying), address(crossChainUnderlying), address(mockRouter));
+
         underlying.mint(LP, 1000e18);
+        vm.deal(LP, 1000 ether);
     }
 
     function testPoolDeployment() public view {
@@ -49,10 +59,10 @@ contract CrossChainPoolTest is Test {
         // create a new user and impersonate him
         vm.startPrank(LP);
         // call deposit
-
+        uint256 ccipFees = 1;
         underlying.approve(address(crossChainPool), type(uint256).max);
         for (uint256 i = 0; i < numberOfDeposit; i++) {
-            crossChainPool.deposit(underlying, STARTING_DEPOSIT);
+            crossChainPool.deposit{value: ccipFees}(underlying, STARTING_DEPOSIT);
         }
         vm.stopPrank();
 
@@ -62,21 +72,21 @@ contract CrossChainPoolTest is Test {
     }
 
     function testRedeem() public deposited {
-        uint256 valueToBurn = 1e17;
+        uint256 valueToBurn = 1e17; //lpts
+        // 100000000000000000 vm
         //call reedem
         vm.startPrank(LP);
         // approving LPT
         crossChainPool.approve(address(crossChainPool), valueToBurn); // i'm not sure, dbc
-        crossChainPool.redeem(valueToBurn, LP);
+        crossChainPool.redeem{value: 1}(valueToBurn, LP);
         vm.stopPrank();
 
         // check that the balance of LPT is burnt correctly
         assertEq(crossChainPool.balanceOf(LP), STARTING_DEPOSIT - valueToBurn);
     }
 
-    function testCalculatingFees() public deposited {
-        uint256 amPlusFees = crossChainPool.getCCipFeesForDeposit(1e18);
-        // should be 1e18 + 5 % of 1e18
-        assertEq(amPlusFees, 5e15);
+    function testCalculatingCCipFees() public deposited {
+        uint256 ccipDepositFees = crossChainPool.getCCipFeesForDeposit(1e18);
+        assertEq(ccipDepositFees, 1);
     }
 }

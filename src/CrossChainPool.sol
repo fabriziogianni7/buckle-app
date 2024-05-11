@@ -23,7 +23,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// import {// console2} from "forge-std/Test.sol";
+import {console2} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -193,16 +193,17 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
      *         the user should get 30% of its burned token here and 70% there
      * @param _lptAmount the LPT amount to burn
      */
-    function redeem(uint256 _lptAmount, address _to) external nonReentrant isUserLiquidityProvider {
+    function redeem(uint256 _lptAmount, address _to) external payable nonReentrant isUserLiquidityProvider {
         // check that user has funds
         if (balanceOf(msg.sender) < _lptAmount) {
             revert CrossChainPool__NotEnoughBalanceToRedeem();
         }
 
         (uint256 redeemCurrentChain, uint256 redeemCrossChain) = calculateAmountToRedeem(_lptAmount);
-        //TEST THIS PART ^^^
+        console2.log("redeemCurrentChain", redeemCurrentChain);
+        console2.log("underlying in pool", balanceOf(address(this)));
 
-        if (balanceOf(address(this)) < redeemCurrentChain) {
+        if (i_underlyingToken.balanceOf(address(this)) < redeemCurrentChain) {
             revert CrossChainPool__NotEnoughBalanceToRedeemCurrentChain();
         }
         if (s_crossChainUnderlyingBalance < redeemCrossChain) {

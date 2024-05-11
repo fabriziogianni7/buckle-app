@@ -100,3 +100,74 @@ contract ChainlinkLocalForkHelper is Script, StdCheats {
     //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
     // }
 }
+
+I need to do some library to map the token pairs
+
+
+
+In CrosschainPool i need to:
+    1. Map the corresponding pool on the other network OK
+    2. implement teleport() function (bridges token from s to d)
+
+
+ 2533710
+  234691
+  lptAmount 15000000000000000000
+  lptAmount 15000000000000000000
+  lptAmount  1000000000000000000 1
+             1000250000000000000 1 and somethig
+             5000000000000000000
+            20005000000000000000 20.005e15
+            14997500000000000000 14ish
+
+  88277
+  totalCrossChainUnderlyingAmount 15000000000000000000
+  totalCrossChainLPTAmount 15000000000000000000
+  value of 1 lpt 1000000000000000000
+
+  lptAmount 5000000000000000000 5e18
+  totalCrossChainUnderlyingAmount 15000000000000000000
+  totalCrossChainLPTAmount 15000000000000000000
+  value of 1 lpt 1000000000000000000
+  lptAmount 5000000000000000000 5e18
+  84271
+  48891
+  totalCrossChainUnderlyingAmount 20005000000000000000
+  totalCrossChainLPTAmount 20000000000000000000
+  value of 1 lpt 1000250000000000000
+  totalCrossChainUnderlyingAmount 20005000000000000000
+  totalCrossChainLPTAmount 20000000000000000000
+  value of 1 lpt 1000250000000000000
+  lptAmount      9997500000000000000
+  totalCrossChainUnderlyingAmount 20005000000000000000
+  totalCrossChainLPTAmount 20000000000000000000
+  value of 1 lpt 1000250000000000000
+  lptAmount 9997500000000000000
+  currentLPSEPAmountLpt 14997500000000000000
+  totalCrossChainUnderlyingAmount 30005000000000000000
+  totalCrossChainLPTAmount 29997500000000000000
+  value of 1 lpt 1000250000000000000
+  getValueOfOneLpt 1000250000000000000 ERC underlying
+  totalCrossChainUnderlyingAmount 30005000000000000000
+  totalCrossChainLPTAmount 29997500000000000000
+  value of 1 lpt 1000250000000000000
+
+
+  vvvvv error here
+  total redeemValue 15001249375000000000000000000000000000
+  totaProtocolUnderlying 30005000000000000000
+  underlying in sepolia pool 16000000000000000000
+  totalCrossChainUnderlyingAmount 30005000000000000000
+  totalCrossChainLPTAmount 29997500000000000000
+  value of 1 lpt 1000250000000000000
+  underlying balance on arb 14005000000000000000
+  redeemCurrentChain 7998666166750000000000000000000000000
+  redeemCrossChain 7001083083312500000000000000000000000
+
+
+
+
+  redeemCurrentChain 7998666166750000000
+  redeemCrossChain 7001083083312500000
+
+  currentLPSEPAmountLpt 14997500000000000000

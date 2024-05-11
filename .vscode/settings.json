@@ -1,5 +1,25 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "solidity.compileUsingRemoteVersion": "v0.8.25+commit.b61c2a91"
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": "lib",
+  "solidity.compileUsingRemoteVersion": "v0.8.25+commit.b61c2a91",
+  "solidity.remappingsWindows": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts",
+    "forge-std/=lib/forge-std/src/",
+    "ccip/contracts/=lib/ccip/contracts/src/v0.8/ccip/",
+    "@chainlink/local/=lib/chainlink-local"
+  ],
+  "solidity.remappingsUnix": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts",
+    "forge-std/=lib/forge-std/src/",
+    "ccip/contracts/=lib/ccip/contracts/src/v0.8/ccip/",
+    "@chainlink/local/=lib/chainlink-local"
+  ],
+  "solidity.remappings": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts",
+    "forge-std/=lib/forge-std/src/",
+    "ccip/contracts/=lib/ccip/contracts/src/v0.8/ccip/",
+    "@chainlink/local/=lib/chainlink-local"
+  ]
 }

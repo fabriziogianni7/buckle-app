@@ -3,16 +3,15 @@ pragma solidity ^0.8.25;
 
 import {Script, console} from "forge-std/Script.sol";
 import {CrossChainPool} from "../src/CrossChainPool.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 // todo update it with real pks
 contract DeployCrossChainPool is Script {
-    ERC20Mock public underlying;
-
-    function run() public returns (CrossChainPool) {
-        underlying = new ERC20Mock();
+    function run(address currentChainUnderlying, address crossChainUnderlying, address mockRouter)
+        public
+        returns (CrossChainPool)
+    {
         CrossChainPool crossChainPool =
-            new CrossChainPool(address(underlying), "crossChainPoolTest", 1, address(1), address(1));
+            new CrossChainPool(currentChainUnderlying, "crossChainPoolTest", 1, mockRouter, crossChainUnderlying);
         return crossChainPool;
     }
 }
