@@ -33,8 +33,6 @@ Buckle App is like is a trustless, automated atomic swap protocol, based on pool
 | Technology Risk | Low           | Based on CCIP which is decentralized                                            |
 | Censorship Risk | Low           | Based on CCIP which is decentralized                                            |
 | Custodial Risk  | None          | It's non custodial                                                              |
-| Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge\*                                   |
-
-> - need to implement a system to allow users to get their money back if they can't get their money on destination chain
+| Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 
 ## How does it work
