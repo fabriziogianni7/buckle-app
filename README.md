@@ -15,11 +15,11 @@ Please, follow me on [youtube](https://www.youtube.com/@fabriziogianni7) and [he
 
 **Buckle App** is a trustless bridge operating with Chainlink ccip. It's inspired by the model of atomic swaps, but it's much more.
 
-Buckle App has its "Atomic Pools Pair" where LPs can deposit Tokens and earn fees and other users can bridge their tokens. We will replace the term "bridge" with "teleport".
+Buckle App has its **Cross Chain Pools Pairs** where LPs can deposit Tokens and earn fees and other users can transfer their tokens from network to network. We will replace the term "bridge" with "teleport".
 
 Buckle App is like is a trustless, automated atomic swap protocol, based on pools. Therefore we will call it **Cross Chain Pool Swap Protocol**.
 
-### Risks of the Bridges
+## Protocol Risks
 
 | Risk            | Degree        | Motivation                                                                      |
 | --------------- | ------------- | ------------------------------------------------------------------------------- |
