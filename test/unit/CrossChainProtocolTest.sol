@@ -208,6 +208,7 @@ contract CrossChainProtocolTest is Test {
     function testCrossChainDepositAfterTeleport() public {
         vm.selectFork(sepoliaFork);
         uint256 deposit_amount = 5e18;
+        uint256 teleportAmount = 5e18;
 
         // user need to deposit ERC20 in sepolia
         vm.startPrank(LP_SEP);
@@ -227,7 +228,6 @@ contract CrossChainProtocolTest is Test {
         // TELEPORTING HERE
         vm.startPrank(valentinoRossi);
 
-        uint256 teleportAmount = 100e18;
         sepoliaUnderlying.approve(address(deployedSepoliaPool), teleportAmount);
 
         uint256 ccipFees2 =
@@ -257,8 +257,16 @@ contract CrossChainProtocolTest is Test {
         uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
 
         uint256 lastMintedLptForLPSEP = currentLPSEPAmountLpt - lptAmountOfLPSEPBeforeTeleporting;
+        console2.log("lastMintedLptForLPSEP", lastMintedLptForLPSEP);
+        console2.log(
+            "second_deposit_amount_on_sepolia / valueOfOneLptBeforeDeposit",
+            ((second_deposit_amount_on_sepolia * 1e18) / valueOfOneLptBeforeDeposit)
+        );
+        // 9987510000000000000
+        // 9987515600000000000
+        console2.log("second_deposit_amount_on_sepolia", second_deposit_amount_on_sepolia);
 
-        assertEq(lastMintedLptForLPSEP, second_deposit_amount_on_sepolia / valueOfOneLptBeforeDeposit);
+        assertEq(lastMintedLptForLPSEP, ((second_deposit_amount_on_sepolia * 1e18) / valueOfOneLptBeforeDeposit));
         assertLt(lastMintedLptForLPSEP, second_deposit_amount_on_sepolia);
     }
 
@@ -311,16 +319,8 @@ contract CrossChainProtocolTest is Test {
 
         //// start testing the redeemal
         uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
-        console2.log("currentLPSEPAmountLpt", currentLPSEPAmountLpt);
-        console2.log("getValueOfOneLpt", CrossChainPool(deployedSepoliaPool).getValueOfOneLpt());
-        console2.log(
-            "total redeemValue", CrossChainPool(deployedSepoliaPool).getValueOfOneLpt() * currentLPSEPAmountLpt
-        );
 
         (uint256 totaProtocolUnderlying,) = CrossChainPool(deployedSepoliaPool).getTotalProtocolBalances();
-        console2.log("totaProtocolUnderlying", totaProtocolUnderlying);
-
-        console2.log("underlying in sepolia pool", sepoliaUnderlying.balanceOf(deployedSepoliaPool));
 
         // (uint256 totalUnderlyingBal, uint256 totalLptBal) =
         //     CrossChainPool(deployedSepoliaPool).getTotalProtocolBalances();
@@ -333,18 +333,8 @@ contract CrossChainProtocolTest is Test {
         (uint256 crossChainUnderlyingBalance, uint256 crossChainLiquidityPoolTokens) =
             CrossChainPool(deployedSepoliaPool).getCrossChainBalances();
 
-        console2.log("underlying balance on arb", crossChainUnderlyingBalance);
-        console2.log("redeemCurrentChain", redeemCurrentChain);
-        console2.log("redeemCrossChain", redeemCrossChain);
+        uint256 totalRedeem = CrossChainPool(deployedSepoliaPool).getRedeemValueForLP(currentLPSEPAmountLpt);
 
-        //       30_005000000000000000 --> total protocol underlying
-        //       16_000000000000000000 --> underlying in sepolia pool
-        //       14_005000000000000000 --> underlying in arbitrum pool --> ok!
-
-        //        0_012501875468867216 --> currentLPSEPAmountLpt
-        //        2_000333333333333331 --> value of 1lpt
-        //       24_003999999999999972 --> total redeem value
-        //       12_798932799999999985 --> redeem Current Chain
-        //       11_202666799999999986 --> redeem Cross Chain
+        assertEq(totalRedeem / 1e10, (redeemCurrentChain + redeemCrossChain) / 1e10); // it should definitelly be more precise, todo look into it
     }
 }

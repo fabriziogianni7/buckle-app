@@ -23,7 +23,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// import {console2} from "forge-std/Test.sol";
+// import {// console2} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -264,7 +264,8 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
      */
     function calculateLPTinExchangeOfUnderlying(uint256 _amountOfUnderlyingToDeposit) public view returns (uint256) {
         uint256 valueOfOneLpt = getValueOfOneLpt();
-        uint256 lptAmount = _amountOfUnderlyingToDeposit / valueOfOneLpt;
+        uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e5) / valueOfOneLpt) * 1e13;
+        // // console2.log("lptAmount", lptAmount);
         return lptAmount;
     }
 
@@ -276,34 +277,31 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
         view
         returns (uint256 redeemCurrentChain, uint256 redeemCrossChain)
     {
-        uint256 totalReedemValue = _lptAmount * getValueOfOneLpt();
+        uint256 precision = 1e18;
+        uint256 totalReedemValue = getRedeemValueForLP(_lptAmount);
+        // console2.log("totalReedemValue", totalReedemValue);
 
         (uint256 totaProtocolUnderlying,) = getTotalProtocolBalances();
-
+        // console2.log("totaProtocolUnderlying", totaProtocolUnderlying);
         // calculate how much to withdraw in each chain
         uint256 totalUnderlyingHere = i_underlyingToken.balanceOf(address(this));
 
-        uint256 ratioCurrentChain = (totalUnderlyingHere * 10_000) / totaProtocolUnderlying;
+        // console2.log("totalUnderlyingHere", totalUnderlyingHere);
 
-        uint256 ratioCrossChain = (s_crossChainUnderlyingBalance * 10_000) / totaProtocolUnderlying;
+        uint256 ratioCurrentChain = (totalUnderlyingHere * precision) / totaProtocolUnderlying;
 
-        redeemCurrentChain = (totalReedemValue * ratioCurrentChain) / 10_000;
-        redeemCrossChain = (totalReedemValue * ratioCrossChain) / 10_000;
-    }
+        // console2.log("ratioCurrentChain", ratioCurrentChain);
 
-    /**
-     * @notice calculate the amount of underlying token LP get in exchange of  LPT tokens
-     *  1 underlying = total crosschain LPT / total cross-chain underlying
-     * @param _lptAmountToExchange the amount to exchange
-     * @custom:assumption we assume the ERC20 always have 18 decimals
-     */
-    function calculateUnderlyingInExchangeOfLPT(uint256 _lptAmountToExchange) public view returns (uint256) {
-        uint256 valueOfOneLpt = getValueOfOneLpt();
-        // amountUnderlying = lptAmount/valueOfOneLpt;
-        // 1 LPT = 1.2
-        // 10 LPT / 1.2 = 8.3 underlyng
-        uint256 underlyingAmount = _lptAmountToExchange / valueOfOneLpt;
-        return underlyingAmount;
+        uint256 ratioCrossChain = (s_crossChainUnderlyingBalance * precision) / totaProtocolUnderlying;
+
+        // console2.log("ratioCrossChain", ratioCrossChain);
+
+        redeemCurrentChain = (totalReedemValue * ratioCurrentChain) / precision;
+        redeemCrossChain = (totalReedemValue * ratioCrossChain) / precision;
+
+        // console2.log("redeemCurrentChain", redeemCurrentChain);
+        // console2.log("redeemCrossChain", redeemCrossChain);
+        // console2.log("sum", redeemCrossChain + redeemCurrentChain);
     }
 
     /**
@@ -557,9 +555,13 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
 
         if (totalCrossChainLPTAmount == 0) {
             // in this case the ratio is 1 to 1 because we have 0 LPT and 0 underlying
-            return 1;
+            return 1e18;
         }
 
-        value = (totalCrossChainUnderlyingAmount * 1e18) / totalCrossChainLPTAmount;
+        value = ((totalCrossChainUnderlyingAmount * 1e5) / totalCrossChainLPTAmount) * 1e13;
+    }
+
+    function getRedeemValueForLP(uint256 _lptAmount) public view returns (uint256 reedemValue) {
+        reedemValue = (_lptAmount * getValueOfOneLpt()) / 1e18;
     }
 }
