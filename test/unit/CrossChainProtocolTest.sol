@@ -64,7 +64,8 @@ contract CrossChainProtocolTest is Test {
 
         DeployPoolFactory deployPoolFactorySep = new DeployPoolFactory();
 
-        sepoliaFactory = deployPoolFactorySep.run(routerAddressSepolia, feeTokenSepolia);
+        sepoliaFactory = deployPoolFactorySep.run();
+        // sepoliaFactory = deployPoolFactorySep.run(routerAddressSepolia, feeTokenSepolia);
 
         ccipLocalSimulatorFork.requestLinkFromFaucet(address(sepoliaFactory), 100e18);
 
@@ -83,7 +84,8 @@ contract CrossChainProtocolTest is Test {
 
         DeployPoolFactory deployPoolFactoryArb = new DeployPoolFactory();
 
-        arbFactory = deployPoolFactoryArb.run(routerAddressArb, feeTokenArb);
+        arbFactory = deployPoolFactoryArb.run();
+        // arbFactory = deployPoolFactoryArb.run(routerAddressArb, feeTokenArb);
 
         ccipLocalSimulatorFork.requestLinkFromFaucet(address(arbFactory), 100e18);
 
