@@ -4,3 +4,25 @@ write more tests
 design a frontend 
 implement the frontend 
 see how I can add swaps to the protocol
+need to find a way to allow users to get their money back if there is liquidity shortage on the other network
+
+
+
+
+NOW:
+deploy my contracts (factories) and verify on etherscan (and so on)
+
+// deploying securely bro!!
+anvil pk 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+anvil address 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+cast wallet import anvilAcc --interactive
+anvil pwd: 123abc
+
+forge script script/DeployPoolFactory.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --account anvilAcc
+
+script/DeployPoolFactory.s.sol
+name of deployer account: nota
+
+Pool factory deployed!!!!!
+address in arb: 0x8F44aFD0e319aBcEdaee0599Ad7a9c0C4f4A7Fd8
+address in sepoilia: 0x30C07770a7F5576B2c36D38d8D145762867432EA
