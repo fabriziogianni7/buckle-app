@@ -23,15 +23,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console2} from "forge-std/Test.sol";
-
 import {CrossChainPool} from "./CrossChainPool.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
 import {Client} from "ccip/contracts/libraries/Client.sol";
 import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
-
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /**
  * @notice this contract deploy simultaneusly 2 pools on 2 networks
  * todo there should be a function to allow different networks
@@ -40,12 +38,15 @@ import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
  *  the deployer is the owner of the contract
  *  deployer need to sen feetoken to this contract beforehand
  */
+
 contract PoolFactory is Ownable, CCIPReceiver {
     // errors
     error PoolFactory__PoolDeploymentFailed();
     error PoolFactory__CrossChainDeploymentFailed(bytes call);
     // interfaces, libraries, contracts
     // Type declarations
+
+    using SafeERC20 for IERC20;
 
     // State variables
     bytes32 private s_lastReceivedMessageId; // Store the last received messageId.
@@ -57,8 +58,15 @@ contract PoolFactory is Ownable, CCIPReceiver {
     mapping(uint64 => address[]) private s_deployedPools; //  maps chain selector to pool array
 
     // Events
-    event PoolCreated(address indexed pool);
+    event PoolCreated(
+        address indexed pool,
+        address indexed tokenCurrentChain,
+        address indexed tokenCrossChain,
+        uint64 crosschainSelector
+    );
     event MessageReceived(bytes32 indexed messageId);
+    event FeeTokenDeposited(address indexed sender);
+    event FeeTokenWithdrawn();
 
     // Modifiers
 
@@ -92,7 +100,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
         uint64 _destinationChainSelector,
         string memory _poolName
     ) external returns (address) {
-        (address deployedPool, bool success) = deployPool(
+        (address deployedPool, bool success) = _deployPool(
             _underlyingTokenOnSourceChain, _poolName, _destinationChainSelector, _underlyingTokenOnDestinationChain
         );
         if (!success) {
@@ -109,14 +117,27 @@ contract PoolFactory is Ownable, CCIPReceiver {
         return deployedPool;
     }
 
+    function depositFeeToken(uint256 _amount) external {
+        IERC20(i_feeToken).safeTransferFrom(msg.sender, address(this), _amount);
+        emit FeeTokenDeposited(msg.sender);
+    }
+
+    function withdrawFeeToken() external onlyOwner {
+        uint256 balance = IERC20(i_feeToken).balanceOf(address(this));
+        IERC20(i_feeToken).safeTransfer(msg.sender, balance);
+        emit FeeTokenWithdrawn();
+    }
+
     // public
-    // todo check that only ccip can call it (or owner?)
-    function deployPool(
+
+    // internal/ private
+
+    function _deployPool(
         address _underlyingToken,
         string memory _name,
         uint64 _crossChainSelector,
         address _underlyingTokenOnDestinationChain
-    ) public returns (address poolAddress, bool success) {
+    ) internal returns (address poolAddress, bool success) {
         // todo make necessary checks
         address router = getRouter();
         CrossChainPool pool =
@@ -128,11 +149,9 @@ contract PoolFactory is Ownable, CCIPReceiver {
             success = true;
         }
 
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, _underlyingToken, _underlyingTokenOnDestinationChain, _crossChainSelector);
         return (poolAddress, success);
     }
-
-    // internal/ private
 
     /**
      * @notice send a message crosschain to another factory to deploy a pool contract
@@ -155,7 +174,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
             receiver: abi.encode(receiver), // receiver is the factory on destination chain
             data: abi.encode(
                 DEPLOY_POOL_FUNCTION_ID, _underlyingOnOtherChain, _name, _deployedPoolAddress, _underlyingTokenOnSourceChain
-            ), //  the parameters to pass into deployPool
+            ), //  the parameters to pass into _deployPool
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
@@ -187,7 +206,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_receiver), // receiver is the factory on destination chain
-            data: abi.encode(SUCCESS_DEPLOY_FUNCTION_ID, _deployedPoolAddress, "", _deployedPoolOnOtherChain, address(0)), //  the parameters to pass into deployPool
+            data: abi.encode(SUCCESS_DEPLOY_FUNCTION_ID, _deployedPoolAddress, "", _deployedPoolOnOtherChain, address(0)), //  the parameters to pass into _deployPool
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
@@ -201,6 +220,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
         IERC20(i_feeToken).approve(address(router), fee);
 
         s_lastSentMessageId = IRouterClient(router).ccipSend(_destinationChainSelector, message);
+        // consider emit event here
     }
 
     /**
@@ -232,7 +252,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
 
         if (functionID == DEPLOY_POOL_FUNCTION_ID) {
             // todo find a good way to handle error here
-            (address deployedPool, bool success) = deployPool(
+            (address deployedPool, bool success) = _deployPool(
                 underlyingTokenOrDeployedAddress,
                 poolName,
                 any2EvmMessage.sourceChainSelector,
@@ -248,6 +268,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
                     deployedPool, // current chain
                     peerDeployedPool // source chain
                 );
+                //todo emit an event here with the deployed pool
             } else {
                 revert PoolFactory__PoolDeploymentFailed();
             }

@@ -77,7 +77,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
     IERC20 private immutable i_underlyingToken;
     IERC20 private immutable i_otherChainUnderlyingToken;
     uint64 private immutable i_crossChainSelector;
-    address private s_crossChainPool;
+    address private s_crossChainPool; // the address of the other chain linked to this one
     bytes32 private s_lastSentMessageId;
     bytes32 private s_lastReceivedMessageId; // Store the last received messageId.
     mapping(address => uint256) private readyToWithdraw;
@@ -224,7 +224,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
 
     /**
      * @notice add the crosschain sender of the other pool
-     * todo add access control
+     * todo add access control (onlyRouter)
      */
     function addCrossChainSender(address _sender) external {
         s_crossChainPool = _sender;
