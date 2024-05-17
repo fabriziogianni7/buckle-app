@@ -9,22 +9,27 @@ export default function PoolCreator() {
     const [destinationNetwork, setDestinationNetwork] = useState<allowedChainids>()
     const [token, setToken] = useState<"usdc">()
     const chainId = useChainId() as allowedChainids
-    const { writeContract } = useWriteContract()
+    const { writeContract, error } = useWriteContract()
 
-
+    useEffect(() => { console.log("error", error) }, [error])
     const createPoolPairs = () => {
-        writeContract({
-            abi: generalConfig.poolFactoryAbi,
-            address: generalConfig.poolMapping[chainId].factory,
-            functionName: "deployCCPools",
-            args: [
-                generalConfig.poolMapping[destinationNetwork!].factory, // _receiverFactory
-                generalConfig.poolMapping[chainId].tokens[token!], // _underlyingTokenOnSourceChain
-                generalConfig.poolMapping[destinationNetwork!].tokens[token!], //_underlyingTokenOnDestinationChain
-                generalConfig.poolMapping[destinationNetwork!].chainSelector, //_destinationChainSelector
-                "test" // _poolName
-            ]
-        })
+
+        const abi = generalConfig.poolFactoryAbi
+        const poolMapping = generalConfig.poolMapping
+        if (destinationNetwork && token) {
+            writeContract({
+                abi,
+                address: poolMapping[chainId].factory,
+                functionName: "deployCCPools",
+                args: [
+                    poolMapping[destinationNetwork].factory, // _receiverFactory
+                    poolMapping[chainId].tokens[token], // _underlyingTokenOnSourceChain
+                    poolMapping[destinationNetwork].tokens[token], //_underlyingTokenOnDestinationChain
+                    poolMapping[destinationNetwork].chainSelector, //_destinationChainSelector
+                    "test" // _poolName
+                ]
+            })
+        }
     }
 
 

@@ -24,15 +24,16 @@ export default function RootLayout({
   const cookie = headers().get("cookie");
   return (
     <html lang="en">
-      <PrelineScript />
-      <Providers cookie={cookie}>
-        <body className={inter.className}>
+      <body className={inter.className}>
+        <PrelineScript />
+        <Providers cookie={cookie}>
           <Navbar />
           <div className="container mx-auto ">
             {children}
           </div>
-        </body>
-      </Providers>
+        </Providers>
+        {/* <script src="node_modules/preline/dist/preline.js"></script> */}
+      </body>
     </html>
 
   );

@@ -16,7 +16,8 @@ export default function Card({
     title,
     SourceOrDestination,
     setDestinationNetwork,
-    setToken
+    setToken,
+    createPoolPairs
 }: CardProps) {
     return (
         <div className="flex flex-col bg-white border shadow-sm  dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70">
@@ -51,7 +52,8 @@ export default function Card({
                 </div>
             </div>
             <div className="bg-gray-100 border-t rounded-b-xl py-3 px-4 md:py-4 md:px-5 dark:bg-neutral-900 dark:border-neutral-700">
-                <button type="button" className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-yellow-500 hover:bg-yellow-100 hover:text-yellow-800 disabled:opacity-50 disabled:pointer-events-none dark:hover:bg-yellow-800/30 dark:hover:text-yellow-400">
+                <button type="button" className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-yellow-500 hover:bg-yellow-100 hover:text-yellow-800 disabled:opacity-50 disabled:pointer-events-none dark:hover:bg-yellow-800/30 dark:hover:text-yellow-400"
+                    onClick={() => createPoolPairs()}>
                     Deploy Pools Cross Chain
                 </button>
             </div>

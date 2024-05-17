@@ -640,6 +640,11 @@
   resolved "https://registry.yarnpkg.com/@preline/collapse/-/collapse-2.1.0.tgz#278a92224a6b889559aafab75e8905d637787f94"
   integrity sha512-+QwEe+LNseV80GWH5vOd1RscpFK+o0j2E+1sph5+o8poBIiC81xS2AlhPpuMykRvy/LtZMsptm7Ppc5b0Q4fPw==
 
+"@preline/overlay@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@preline/overlay/-/overlay-2.1.0.tgz#b5c3f872c048e6c4ed3d40adb50eb7d92279f85d"
+  integrity sha512-IvXOnzk+AHhRu91COFQpd/sHFm9B2w0qlW2pI5RbnrJK3Q1WIqK0TLUAe7yaEfG8Qw8crgsBGLJzNyuTIkwobw==
+
 "@rainbow-me/rainbowkit@^2.0.7":
   version "2.0.7"
   resolved "https://registry.yarnpkg.com/@rainbow-me/rainbowkit/-/rainbowkit-2.0.7.tgz#50616bb547aab7bdc16ef8fdb0f10eb291366c2d"
