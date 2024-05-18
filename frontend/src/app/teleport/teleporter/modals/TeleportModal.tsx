@@ -6,6 +6,8 @@ import useCurrentChainSelector from "@/app/hooks/useCurrentChainSelector";
 import { useEffect, useState } from "react";
 import { formatEther } from "viem";
 import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, type UseReadContractReturnType } from "wagmi";
+import Image from 'next/image';
+
 
 interface TeleportModalProps {
 
@@ -28,6 +30,11 @@ export default function TeleportModal({
     const { writeContract, error, context, data: hash, status, isPending } = useWriteContract()
     const { address: userAddress } = useAccount()
     const { selector: currentSelector, chainId: currentChainId, chainName: currentChainName } = useCurrentChainSelector()
+
+
+    const resetState = () => {
+        setPhase(undefined)
+    }
 
 
 
@@ -123,10 +130,10 @@ export default function TeleportModal({
             <div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
                 <div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-neutral-800 dark:border-neutral-700 dark:shadow-neutral-700/70">
                     <div className="flex justify-between items-center py-3 px-4 border-b dark:border-neutral-700">
-                        <h3 className="font-bold text-gray-800 dark:text-white">
+                        <h3 className="font-bold text-gray-800 dark:text-slate-300 ">
                             Teleport Tokens from {currentChainName} to {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}
                         </h3>
-                        <button type="button" className="flex justify-center items-center size-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700" data-hs-overlay="#teleport-modal">
+                        <button type="button" className="flex justify-center items-center size-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-slate-300 dark:hover:bg-neutral-700" data-hs-overlay="#teleport-modal">
                             <span className="sr-only">Close</span>
                             <svg className="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 6 6 18"></path>
@@ -134,31 +141,76 @@ export default function TeleportModal({
                             </svg>
                         </button>
                     </div>
-                    <div className="p-4 overflow-y-auto">
-                        <div>
-                            < p className="mt-1 text-gray-800 dark:text-neutral-400">
-                                You're going to approve and "teleport" tokens from  {currentChainName} to {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}.
-                            </p>
-                            <p className="mt-1 text-gray-800 dark:text-neutral-400">
-                                You need to pay some {ccipFees as bigint ? formatEther(ccipFees as bigint) : 0} fees to ccip:
-                            </p>
-                            <p className="mt-1 text-gray-800 dark:text-neutral-400">
-                                You'll receive this 122 on the other chain
-                            </p>
-                        </div>
-                    </div >
+                    <div className="p-4 overflow-y-auto flex justify-center">
+                        {
+                            phase != "success" &&
+                            <div className="max-w-xs bg-white border border-gray-200 rounded-xl shadow-lg dark:bg-neutral-800 dark:border-neutral-700" role="alert">
+                                <div className="flex p-4">
+                                    <div className="flex-shrink-0">
+                                        <Image
+                                            priority
+                                            src={"/icons-buckle/teleport-icon-white.svg"}
+                                            alt="deposit"
+                                            width={50}
+                                            height={50}
+                                        />
+                                    </div>
+                                    <div className="ms-4">
+                                        <h3 className="text-gray-800 font-semibold dark:text-slate-300">
+                                            Teleport Tokens
+                                        </h3>
+                                        <div className="mt-1 text-sm text-gray-600 dark:text-neutral-400  max-w-md ">
+                                            You're going to teleport tokens from {currentChainName} to
+                                            {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}
+                                        </div>
+                                        <div className="mt-4">
+                                            <div className="flex flex-col space-y-3">
+
+                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
+                                            dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
+                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: 0.001 token</span>
+                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get 100 LPT </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        {
+                            phase == "success" &&
+                            <div className="max-w-xs bg-white border border-gray-200 rounded-xl shadow-lg dark:bg-neutral-800 dark:border-neutral-700 text-wrap" role="alert">
+                                <div className="flex p-4 text-wrap">
+                                    <div className="flex-shrink-0">
+                                        <svg className="flex-shrink-0 size-4 text-teal-500 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"></path>
+                                        </svg>
+                                    </div>
+                                    <div className="ms-3 max-w-30">
+                                        <article className="text-sm text-pretty break-all  text-gray-700 dark:text-neutral-400">
+                                            <h3>You successfully teleported your tokens to {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}.</h3>
+                                            <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/msg/${hash}`}>
+                                                {hash}
+                                            </a>
+                                            </p>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                     <div className="flex justify-end items-center gap-x-2 py-3 px-4 border-t dark:border-neutral-700">
-                        <button type="button" className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800" data-hs-overlay="#teleport-modal">
+                        <button type="button" className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-slate-300 dark:hover:bg-neutral-800" data-hs-overlay="#teleport-modal"
+                            onClick={() => resetState()}>
                             Close
                         </button>
-                        < button type="button" disabled={false} className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                        < button type="button" disabled={false} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-yellow-400 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800"
                             onClick={() => methodNeeded()}
                         >
-                            {phase == "approve" && !isConfirming ? "Approve" : "Deposit"}
+                            {phase == "approve" && !isConfirming ? "Approve" : "Teleport"}
                             {isConfirming && <div className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status" aria-label="loading">
                                 <span className="sr-only">Wait For Transaction</span>
                             </div>}
-                            Teleport ⚡️
+
                         </button>
 
                     </div>

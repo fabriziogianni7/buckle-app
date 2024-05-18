@@ -4,6 +4,7 @@ import { Dispatch, SetStateAction } from "react";
 import useCurrentChainSelector from "@/app/hooks/useCurrentChainSelector";
 import { Pool } from "@/app/config/interfaces";
 import CustomInput from "@/app/components/common/CustomInput";
+import Image from 'next/image';
 
 
 interface CardProps {
@@ -24,10 +25,20 @@ export default function SourceCard({ title = "title", subtitle = "subtitle", poo
     const { selector: currentSelector } = useCurrentChainSelector()
     return (
         <div className="col-span-4">
-            <div className="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70">
+            <div className="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70 w-80" >
                 <div className="p-4 md:p-10">
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                        {title}
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-slate-300">
+                        <div className="flex">
+                            <Image
+                                priority
+                                src={"/icons-buckle/half-left-teleport-icon-white.svg"}
+                                alt="deposit"
+                                width={30}
+                                height={30}
+                                className="mr-2"
+                            />
+                            {title}
+                        </div>
                     </h3>
                     <p className="mt-2 text-gray-500 dark:text-neutral-400">
                         {subtitle}

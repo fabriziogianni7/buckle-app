@@ -22,7 +22,7 @@ export default function Card({
     return (
         <div className="flex flex-col bg-white border shadow-sm  dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70">
             <div className="p-4 md:p-5">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-slate-300">
                     Select Destination Network
                 </h3>
                 <div>
@@ -38,7 +38,7 @@ export default function Card({
                 </div>
             </div>
             <div className="p-4 md:p-5">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-slate-300">
                     Select Tokens
                 </h3>
                 <div>

@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 
 
-import Pools from "./staker/Pools";
+import Pools from "./redeemer/Pools";
 import usePoolCreatedEvents from "@/app/hooks/usePoolCreatedEvents";
 import { Pool } from "../config/interfaces";
 
 
-export default function Stake() {
+export default function Redeem() {
   const [poolList, setPoolList] = useState<Pool[]>()
 
   const { logs } = usePoolCreatedEvents()
@@ -25,12 +25,12 @@ export default function Stake() {
       <div >
         <div className="max-w-5xl mx-auto px-2 xl:px-0 pt-8 lg:pt-2 pb-12">
           <h1 className="font-semibold text-slate-300 text-5xl md:text-6xl">
-            <span className="bg-clip-text bg-gradient-to-tr from-yellow-500 to-yellow-900  text-transparent">Stake into Buckle </span> <br />
-            earn fees at every teleport.
+            <span className="bg-clip-text bg-gradient-to-tr from-yellow-500 to-yellow-900  text-transparent">Redeem Your Tokens </span> <br />
+            Burn LP tokens, get earnings crosschain.
           </h1>
         </div>
       </div>
       <Pools pools={poolList} />
-    </main >
+    </main>
   );
 }

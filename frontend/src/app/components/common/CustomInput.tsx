@@ -21,7 +21,7 @@ export default function CustomInput({
                     </span>
                     {
                         setValue &&
-                        <input className="p-0 bg-transparent border-0 text-gray-800 focus:ring-0 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" type="number" disabled={disabled}
+                        <input className="p-0 bg-transparent border-0 text-gray-800 focus:ring-0 dark:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" type="number" disabled={disabled}
                             onChange={(e: any) => setValue(e.target.value)
                             } />
                     }
