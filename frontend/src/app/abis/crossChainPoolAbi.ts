@@ -228,6 +228,17 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "function",
+        "name": "getGasLimitValues",
+        "inputs": [],
+        "outputs": [
+            { "name": "", "type": "uint256", "internalType": "uint256" },
+            { "name": "", "type": "uint256", "internalType": "uint256" },
+            { "name": "", "type": "uint256", "internalType": "uint256" }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "getOtherChainUnderlyingToken",
         "inputs": [],
         "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
@@ -292,6 +303,13 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "function",
+        "name": "owner",
+        "inputs": [],
+        "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "redeem",
         "inputs": [
             { "name": "_lptAmount", "type": "uint256", "internalType": "uint256" },
@@ -299,6 +317,36 @@ export const crossChainPoolAbi = [
         ],
         "outputs": [],
         "stateMutability": "payable"
+    },
+    {
+        "type": "function",
+        "name": "renounceOwnership",
+        "inputs": [],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setGasLimitValues",
+        "inputs": [
+            {
+                "name": "_gas_limit_teleport",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "_gas_limit_deposit",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "_gas_limit_redeem",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
     },
     {
         "type": "function",
@@ -352,6 +400,15 @@ export const crossChainPoolAbi = [
             { "name": "value", "type": "uint256", "internalType": "uint256" }
         ],
         "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "transferOwnership",
+        "inputs": [
+            { "name": "newOwner", "type": "address", "internalType": "address" }
+        ],
+        "outputs": [],
         "stateMutability": "nonpayable"
     },
     {
@@ -413,6 +470,25 @@ export const crossChainPoolAbi = [
                 "type": "bytes32",
                 "indexed": true,
                 "internalType": "bytes32"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "OwnershipTransferred",
+        "inputs": [
+            {
+                "name": "previousOwner",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "newOwner",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
             }
         ],
         "anonymous": false
@@ -631,6 +707,20 @@ export const crossChainPoolAbi = [
         "name": "InvalidRouter",
         "inputs": [
             { "name": "router", "type": "address", "internalType": "address" }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "OwnableInvalidOwner",
+        "inputs": [
+            { "name": "owner", "type": "address", "internalType": "address" }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "OwnableUnauthorizedAccount",
+        "inputs": [
+            { "name": "account", "type": "address", "internalType": "address" }
         ]
     },
     { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] },

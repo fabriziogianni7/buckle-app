@@ -44,7 +44,7 @@ export default function Pools({ pools }: PoolsProp) {
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                                 {
-                                    pools && pools.map((pool: Pool) => <tr key={0}>
+                                    pools && pools.map((pool: Pool, i) => <tr key={i}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-neutral-200">{
                                             `${pool.pool?.substring(0, 10)}...${pool.pool?.substring(pool.pool.length - 3)}`
                                         }</td>

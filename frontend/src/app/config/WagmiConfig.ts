@@ -1,5 +1,5 @@
 import { http, createStorage, cookieStorage, useClient } from 'wagmi'
-import { arbitrumSepolia, sepolia } from 'wagmi/chains'
+import { arbitrumSepolia, avalancheFuji, sepolia } from 'wagmi/chains'
 
 import { Chain, getDefaultConfig } from '@rainbow-me/rainbowkit'
 
@@ -8,7 +8,7 @@ import { getLogs } from 'viem/actions'
 
 const projectId = `${process.env.NEXT_PUBLIC_WALLET_CONNECT_ID}`;
 
-const supportedChains: Chain[] = [sepolia, arbitrumSepolia];
+const supportedChains: Chain[] = [sepolia, arbitrumSepolia, avalancheFuji];
 
 export const wagmiConfig = getDefaultConfig({
     appName: "WalletConnection",

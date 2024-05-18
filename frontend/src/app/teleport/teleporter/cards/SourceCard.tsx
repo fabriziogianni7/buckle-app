@@ -1,8 +1,6 @@
 'use client'
 
-import { HSOverlay, ICollectionItem } from "preline/preline";
-import { Dispatch, SetStateAction, useState } from "react";
-import { allTokens, ccipSelectorsTochain } from "@/app/config/generalConfig";
+import { Dispatch, SetStateAction } from "react";
 import useCurrentChainSelector from "@/app/hooks/useCurrentChainSelector";
 import { Pool } from "@/app/config/interfaces";
 import CustomInput from "@/app/components/common/CustomInput";

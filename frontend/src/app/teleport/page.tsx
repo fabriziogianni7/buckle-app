@@ -56,7 +56,7 @@ export default function Teleport() {
   useEffect(() => { getPoolFromToken() }, [tokenToBridge])
 
 
-  useEffect(() => { console.log("test", poolsAndTokens) }, [poolsAndTokens])
+  useEffect(() => { console.log("test", chainSelector) }, [chainSelector])
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-24">
       <h1 className="text-4xl dark:text-white mb-16">Chose what token you want to teleport to another network</h1>
