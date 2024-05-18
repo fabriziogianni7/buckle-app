@@ -15,12 +15,19 @@ export default function Navbar() {
                     <a className="inline-flex items-center gap-x-2 text-xl font-semibold dark:text-slate-300" href="#">
                         <Image
                             priority
-                            src={"/icons-buckle/teleport-icon-white.svg"}
+                            src={"/icons-buckle/half-left-teleport-icon-white.svg"}
                             alt="deposit"
                             width={70}
                             height={70}
                         />
                         Buckle
+                        <Image
+                            priority
+                            src={"/icons-buckle/half-right-teleport-icon-white.svg"}
+                            alt="deposit"
+                            width={70}
+                            height={70}
+                        />
                     </a>
                     <div className="sm:hidden">
                         <button type="button" className="hs-collapse-toggle p-2 inline-flex justify-center items-center gap-x-2 rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-transparent dark:border-neutral-700 dark:text-slate-300 dark:hover:bg-white/10" data-hs-collapse="#navbar-image-and-text-1" aria-controls="navbar-image-and-text-1" aria-label="Toggle navigation">
