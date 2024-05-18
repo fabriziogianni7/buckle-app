@@ -110,7 +110,7 @@ contract Register {
         s_networkDetails[31337] = NetworkDetails({
             chainSelector: 1,
             routerAddress: address(new MockRouter()),
-            linkAddress: address(0),
+            linkAddress: address(123456),
             wrappedNativeAddress: address(0),
             ccipBnMAddress: address(0),
             ccipLnMAddress: address(0)

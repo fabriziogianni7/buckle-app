@@ -25,6 +25,7 @@ contract CrossChainProtocolTest is Test {
     address public valentinoRossi = address(46);
     address public LP_ARB = address(102);
     address public LP_SEP = address(102);
+    address public DEPLOYER = address(103);
 
     address public deployedSepoliaPool;
     address public deployedArbSepoliaPool;
@@ -62,12 +63,14 @@ contract CrossChainProtocolTest is Test {
 
         address feeTokenSepolia = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).linkAddress;
 
+        ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
+
+        vm.startPrank(DEPLOYER);
+
         DeployPoolFactory deployPoolFactorySep = new DeployPoolFactory();
 
         sepoliaFactory = deployPoolFactorySep.run();
-        // sepoliaFactory = deployPoolFactorySep.run(routerAddressSepolia, feeTokenSepolia);
-
-        ccipLocalSimulatorFork.requestLinkFromFaucet(address(sepoliaFactory), 100e18);
+        vm.stopPrank();
 
         ////// ARBITRUM SEPOLIA //////
         //creating a new ERC20 for testing
@@ -82,12 +85,13 @@ contract CrossChainProtocolTest is Test {
 
         address feeTokenArb = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).linkAddress;
 
+        vm.startPrank(DEPLOYER);
+        ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
+
         DeployPoolFactory deployPoolFactoryArb = new DeployPoolFactory();
 
         arbFactory = deployPoolFactoryArb.run();
-        // arbFactory = deployPoolFactoryArb.run(routerAddressArb, feeTokenArb);
-
-        ccipLocalSimulatorFork.requestLinkFromFaucet(address(arbFactory), 100e18);
+        vm.stopPrank();
 
         ////// SEPOLIA //////
         vm.selectFork(sepoliaFork);
@@ -332,5 +336,18 @@ contract CrossChainProtocolTest is Test {
         // assertEq(totalRedeem / 1e10, (redeemCurrentChain + redeemCrossChain) / 1e10); // it should definitelly be more precise, todo look into it
         // (totalRedeem / 1e2) =150012499999999999
         assertEq((totalRedeem / 1e2), (redeemCurrentChain + redeemCrossChain) / 1e2); // taking off the last decimals
+
+        uint256 ccipFeesRedeem = CrossChainPool(deployedSepoliaPool).getCCipFeesForRedeem(currentLPSEPAmountLpt, LP_SEP);
+
+        // CrossChainPool(deployedSepoliaPool).deposit{value: ccipFeesRedeem}(
+        //     sepoliaUnderlying, second_deposit_amount_on_sepolia
+        // );
+        CrossChainPool(deployedSepoliaPool).redeem{value: ccipFeesRedeem}(currentLPSEPAmountLpt, LP_SEP);
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); //
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
+        //
     }
 }

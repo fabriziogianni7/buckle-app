@@ -23,12 +23,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console2} from "forge-std/Test.sol";
+// import {console2} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
 import {Client} from "ccip/contracts/libraries/Client.sol";
 import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
@@ -55,7 +57,7 @@ import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
  *  @custom:interfaces
  *     inherit from CCIP contracts and functions contracts
  */
-contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
+contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     // errors
     error CrossChainPool__ShouldBeMoreThanZero();
     error CrossChainPool__WrongUnderlying();
@@ -86,6 +88,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
     uint8 private constant DEPOSIT_FUNCTION_ID = 2;
     uint8 private constant REDEEM_FUNCTION_ID = 3;
     uint256 private FEES_BPS = 500;
+    uint256 private s_gas_limit_teleport = 100_000;
+    uint256 private s_gas_limit_deposit = 120_000;
+    uint256 private s_gas_limit_redeem = 1_000_000;
 
     uint256 private s_crossChainUnderlyingBalance;
     uint256 private s_crossChainLiquidityPoolTokens;
@@ -149,10 +154,25 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
         uint64 _crossChainSelector,
         address _router,
         address _otherChainUnderlyingToken
-    ) ERC20(_name, "LPT") CCIPReceiver(_router) {
+    ) ERC20(_name, "LPT") CCIPReceiver(_router) Ownable(msg.sender) {
         i_underlyingToken = IERC20(_underlyingToken);
         i_otherChainUnderlyingToken = IERC20(_otherChainUnderlyingToken);
         i_crossChainSelector = _crossChainSelector;
+    }
+
+    function setGasLimitValues(uint256 _gas_limit_teleport, uint256 _gas_limit_deposit, uint256 _gas_limit_redeem)
+        public
+        onlyOwner
+    {
+        if (_gas_limit_teleport != 0) {
+            s_gas_limit_teleport = _gas_limit_teleport;
+        }
+        if (_gas_limit_deposit != 0) {
+            s_gas_limit_deposit = _gas_limit_deposit;
+        }
+        if (_gas_limit_redeem != 0) {
+            s_gas_limit_redeem = _gas_limit_redeem;
+        }
     }
 
     // external
@@ -200,8 +220,6 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
         }
 
         (uint256 redeemCurrentChain, uint256 redeemCrossChain) = calculateAmountToRedeem(_lptAmount);
-        console2.log("redeemCurrentChain", redeemCurrentChain);
-        console2.log("underlying in pool", balanceOf(address(this)));
 
         if (i_underlyingToken.balanceOf(address(this)) < redeemCurrentChain) {
             revert CrossChainPool__NotEnoughBalanceToRedeemCurrentChain();
@@ -281,29 +299,17 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
     {
         uint256 precision = 1e18;
         uint256 totalReedemValue = getRedeemValueForLP(_lptAmount);
-        // console2.log("totalReedemValue", totalReedemValue);
 
         (uint256 totaProtocolUnderlying,) = getTotalProtocolBalances();
-        // console2.log("totaProtocolUnderlying", totaProtocolUnderlying);
         // calculate how much to withdraw in each chain
         uint256 totalUnderlyingHere = i_underlyingToken.balanceOf(address(this));
 
-        // console2.log("totalUnderlyingHere", totalUnderlyingHere);
-
         uint256 ratioCurrentChain = (totalUnderlyingHere * precision) / totaProtocolUnderlying;
-
-        // console2.log("ratioCurrentChain", ratioCurrentChain);
 
         uint256 ratioCrossChain = (s_crossChainUnderlyingBalance * precision) / totaProtocolUnderlying;
 
-        // console2.log("ratioCrossChain", ratioCrossChain);
-
         redeemCurrentChain = (totalReedemValue * ratioCurrentChain) / precision;
         redeemCrossChain = (totalReedemValue * ratioCrossChain) / precision;
-
-        // console2.log("redeemCurrentChain", redeemCurrentChain);
-        // console2.log("redeemCrossChain", redeemCrossChain);
-        // console2.log("sum", redeemCrossChain + redeemCurrentChain);
     }
 
     /**
@@ -379,6 +385,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
     /// see CCIPReceiver.sol
     // todo add events for each functionID
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
+        // uint256 startGas = gasleft();
         s_lastReceivedMessageId = any2EvmMessage.messageId;
 
         (
@@ -409,8 +416,14 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
             emit RedeemedCrossChain(
                 to, valueOrUnderlyingDepositedAmountOrAmountToRedeem, block.chainid, any2EvmMessage.messageId
             );
+            // uint256 endGasRedeem = gasleft();
+            // uint256 totalSpent = startGas - endGasRedeem;
+            // console2.log("total gas spent, redeem FUNCTION_ID", totalSpent, functionID);
         }
         emit MessageReceived(any2EvmMessage.messageId);
+        // uint256 endGas = gasleft();
+        // uint256 totalSpent = startGas - endGas;
+        // console2.log("total gas spent, pool, FUNCTION_ID, chainid", totalSpent, functionID, block.chainid);
     }
 
     function _buildDepositMessage(uint256 _underlyingDepositedAmount, uint256 _liquidityTokensMinted)
@@ -424,7 +437,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_deposit})
             ),
             feeToken: address(0) // will pay with eth
         });
@@ -441,7 +454,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_redeem})
             ),
             feeToken: address(0) // will pay with eth
         });
@@ -488,7 +501,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_teleport})
             ),
             feeToken: address(0) // will pay with eth
         });
@@ -567,5 +580,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver {
 
     function getRedeemValueForLP(uint256 _lptAmount) public view returns (uint256 reedemValue) {
         reedemValue = (_lptAmount * getValueOfOneLpt()) / 1e18;
+    }
+
+    function getGasLimitValues() public view returns (uint256, uint256, uint256) {
+        return (s_gas_limit_teleport, s_gas_limit_deposit, s_gas_limit_redeem);
     }
 }

@@ -23,6 +23,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+// import {Test, console2} from "forge-std/Test.sol";
+
 import {CrossChainPool} from "./CrossChainPool.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -178,7 +180,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
+                Client.EVMExtraArgsV1({gasLimit: 2_800_000})
             ),
             feeToken: i_feeToken // the token this contract will pay with
         });
@@ -210,8 +212,10 @@ contract PoolFactory is Ownable, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
+                Client.EVMExtraArgsV1({gasLimit: 400_000})
             ),
+            // _207_625
+            // 2_000_000
             feeToken: i_feeToken // the token this contract will pay with
         });
 
@@ -237,6 +241,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
      *     selector defines the type of received msg
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
+        // uint256 startGas = gasleft();
         s_lastReceivedMessageId = any2EvmMessage.messageId;
 
         // those are the parameters
@@ -287,6 +292,8 @@ contract PoolFactory is Ownable, CCIPReceiver {
         }
 
         emit MessageReceived(any2EvmMessage.messageId);
+        // uint256 endGas = gasleft();
+        // uint256 totalSpent = startGas - endGas;
     }
 
     // view fucntions
