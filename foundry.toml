@@ -13,3 +13,4 @@ remappings = [
 [rpc_endpoints]
 sepolia = "${ETHEREUM_SEPOLIA_RPC_URL}" 
 arbitrumSepolia = "${ARBITRUM_SEPOLIA_RPC_URL}" 
+fuji = "${FUJI_C_RPC_URL}" 
