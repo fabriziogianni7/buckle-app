@@ -2,23 +2,15 @@
 import { useEffect, useState } from "react";
 
 
-import Pools from "./redeemer/Pools";
-import usePoolCreatedEvents from "@/app/hooks/usePoolCreatedEvents";
+import Deposits from "./redeemer/Deposits";
 import { Pool } from "../config/interfaces";
+import useUserPools from "../hooks/useUserPools";
 
 
 export default function Redeem() {
-  const [poolList, setPoolList] = useState<Pool[]>()
 
-  const { logs } = usePoolCreatedEvents()
+  const { userDeposits } = useUserPools()
 
-  useEffect(() => {
-    if (logs) {
-      const logsElements: Pool[] = logs?.map((l => l.args as Pool))
-      setPoolList(logsElements)
-    }
-
-  }, [logs])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-24">
@@ -30,7 +22,7 @@ export default function Redeem() {
           </h1>
         </div>
       </div>
-      <Pools pools={poolList} />
+      <Deposits deposits={userDeposits} />
     </main>
   );
 }

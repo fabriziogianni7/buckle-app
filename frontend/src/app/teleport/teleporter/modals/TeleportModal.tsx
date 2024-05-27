@@ -169,7 +169,6 @@ export default function TeleportModal({
                                                 <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
                                             dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
                                                 <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: 0.001 token</span>
-                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get 100 LPT </span>
                                             </div>
                                         </div>
                                     </div>

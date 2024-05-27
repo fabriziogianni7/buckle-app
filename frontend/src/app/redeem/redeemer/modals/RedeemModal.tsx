@@ -14,42 +14,46 @@ interface DepositModalProps {
     currentChainTokenAddress: `0x${string}` | undefined,
     crossChainTokenAddress: `0x${string}` | undefined
 }
-
-export default function DepositModal({
+type AmountsToRedeem = [bigint, bigint];
+export default function RedeemModal({
     poolName = "test",
     poolAddress = "0x",
-    currentChainTokenAddress = "0x",
     crossChainTokenAddress = "0x"
 }: DepositModalProps) {
     // approve the pool to spend the token write
     // forecast the fees to pay to ccip read
     // call deposit write
     const [amount, setAmount] = useState<number>()
-    const [phase, setPhase] = useState<"approve" | "deposit" | "success">()
+    const [phase, setPhase] = useState<"redeem" | "success">()
+    const [redeemAmounts, setRedeemAmounts] = useState<{
+        currentChain: string,
+        crosschain: string
+    }>()
     const { writeContract, error, context, data: hash, status, isPending } = useWriteContract()
-    const { address } = useAccount()
+    const { address: userAddress } = useAccount()
 
     const resetState = () => {
         setPhase(undefined)
         setAmount(0)
     }
 
-    const { data: allowance } = useReadContract({
-        abi: ierc20Abi,
-        address: currentChainTokenAddress,
-        functionName: "allowance",
+
+    const { data: amountsToRedeem } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "calculateAmountToRedeem",
         args: [
-            address,
-            poolAddress
+            amount
         ]
     })
 
     const { data: ccipFees } = useReadContract({
         abi: crossChainPoolAbi,
         address: poolAddress,
-        functionName: "getCCipFeesForDeposit",
+        functionName: "getCCipFeesForRedeem",
         args: [
-            amount
+            amount,
+            userAddress
         ]
     })
 
@@ -60,58 +64,45 @@ export default function DepositModal({
 
 
 
-    const approve = () => {
-        const abi = ierc20Abi
-        if (poolAddress) {
-            writeContract({
-                abi,
-                address: currentChainTokenAddress,
-                functionName: "approve",
-                args: [ //IERC20 _token, uint256 _amount
-                    poolAddress,
-                    amount
-                ]
-            })
-            setPhase("approve")
-        }
-    }
 
-    const deposit = () => {
+    const redeem = () => {
         const abi = crossChainPoolAbi
         if (poolAddress && ccipFees) {
             writeContract({
                 abi,
                 address: poolAddress,
-                functionName: "deposit",
-                args: [ //IERC20 _token, uint256 _amount
-                    currentChainTokenAddress,
-                    amount
+                functionName: "redeem",
+                args: [ //amount, to
+                    amount,
+                    userAddress
                 ],
                 value: ccipFees as bigint
             })
-            setPhase("deposit")
+            setPhase("redeem")
         }
     }
 
     useEffect(() => {
-        if (phase == "approve" && isConfirmed) {
-            alert("you succesfully approved the tokens, please sign the next transaction to deposit")
-            deposit()
-        }
-        if (phase == "deposit" && isConfirmed) {
+        if (phase == "redeem" && isConfirmed) {
             setPhase("success")
         }
     }, [hash, isConfirming, isConfirmed])
 
+    useEffect(() => {
+        if (amountsToRedeem) {
+            const [amountToRedeem1, amountToRedeem2] = amountsToRedeem as AmountsToRedeem;
+            console.log("amountsToRedeem", amountsToRedeem)
+            setRedeemAmounts({
+                currentChain: formatEther(amountToRedeem1),
+                crosschain: formatEther(amountToRedeem2)
+            })
+
+        }
+    }, [amountsToRedeem])
 
 
-    const methodNeeded = () => {
-        if (amount && allowance as number >= amount)
-            return deposit()
-        return approve()
-    }
 
-    const setCorrectAmountToDeposit = (amount: number) => {
+    const multiplyAmountTimes1e18 = (amount: number) => {
         const finalValue = amount * 1e18
         setAmount(finalValue)
     }
@@ -122,9 +113,9 @@ export default function DepositModal({
 
     return (<div id="deposit-modal" className="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
         {
-            (phase == "approve" || phase == "deposit") && isConfirming &&
+            isConfirming &&
             < div className="mt-2 bg-yellow-100 border border-yellow-200 text-sm text-yellow-800 rounded-lg p-4 dark:bg-yellow-800/10 dark:border-yellow-900 dark:text-yellow-500" role="alert">
-                <span className="font-bold">Wait for tx to land onchain</span> Wait a minute till the tx land onchain
+                <span className="font-bold">Wait for tx to land onchain</span> Wait some minutes till the tx land onchain
             </div>
 
         }
@@ -132,7 +123,7 @@ export default function DepositModal({
             <div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-neutral-800 dark:border-neutral-700 dark:shadow-neutral-700/70">
                 <div className="flex justify-between items-center py-3 px-4 border-b dark:border-neutral-700">
                     <h3 className="font-bold text-gray-800 dark:text-slate-300">
-                        Deposit Tokens In Buckle
+                        Redeem Deposited Tokens From Buckle
                     </h3>
                     <button type="button" className="flex justify-center items-center size-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-slate-300 dark:hover:bg-neutral-700" data-hs-overlay="#deposit-modal">
                         <span className="sr-only">Close</span>
@@ -150,7 +141,7 @@ export default function DepositModal({
                                 <div className="flex-shrink-0">
                                     <Image
                                         priority
-                                        src={"/icons-buckle/deposit-icon-withe.svg"}
+                                        src={"/icons-buckle/redeem-icon-white.svg"}
                                         alt="deposit"
                                         width={40}
                                         height={40}
@@ -158,18 +149,23 @@ export default function DepositModal({
                                 </div>
                                 <div className="ms-4">
                                     <h3 className="text-gray-800 font-semibold dark:text-slate-300">
-                                        Deposit Tokens
+                                        Redeem Tokens
                                     </h3>
                                     <div className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                                        You're going to approve and deposit tokens into the {poolName} pool.
+                                        You're going to burn LP tokens and get back the correspondent underlying tokens from the pool.
+                                    </div>
+                                    <div className="mt-1 text-sm text-black-600 dark:text-withe-400">
+                                        Important! You're going to get some token here and some token in the other chain.
+                                        (need to specify amount here)
                                     </div>
                                     <div className="mt-4">
                                         <div className="flex flex-col space-y-3">
 
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
                                             dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
-                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: FREE</span>
-                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get 100 LPT </span>
+                                            {/* <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: FREE</span> */}
+                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">current chain redeemal amount: {redeemAmounts?.currentChain} underlying tokens</span>
+                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">cross-chain redeemal amount: {redeemAmounts?.crosschain} underlying tokens</span>
                                         </div>
                                     </div>
                                 </div>
@@ -201,7 +197,7 @@ export default function DepositModal({
                     <br />
                     <hr></hr>
                     <br />
-                    <CustomInput disabled={false} title="Select Amount of Tokens you want to deposit" setValue={setCorrectAmountToDeposit} />
+                    <CustomInput disabled={false} title="Select Amount of Tokens you want to redeem" setValue={multiplyAmountTimes1e18} />
                 </div>
                 <div className="flex justify-end items-center gap-x-2 py-3 px-4 border-t dark:border-neutral-700">
                     <button type="button" className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-slate-300 dark:hover:bg-neutral-800" data-hs-overlay="#deposit-modal"
@@ -209,8 +205,8 @@ export default function DepositModal({
                         Close
                     </button>
                     < button type="button" disabled={isConfirming} className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-teal-500 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800"
-                        onClick={() => methodNeeded()}>
-                        {phase == "approve" && !isConfirming ? "Approve" : "Deposit"}
+                        onClick={() => redeem()}>
+                        Redeem
                         {isConfirming && <div className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status" aria-label="loading">
                             <span className="sr-only">Wait For Transaction</span>
                         </div>}

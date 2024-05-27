@@ -1,3 +1,4 @@
+import { crossChainPoolAbi } from "../abis/crossChainPoolAbi";
 import { poolFactoryAbi } from "../abis/poolFactoryAbi";
 
 export enum Factories {
@@ -13,7 +14,7 @@ export const poolMapping = {
     11155111: {
         factory: "0x78f2aA2F6A8B92a0539bA56dDEcfFc0c18e4fEBD" as `0x${string}`, // should be put somewhere else maybe
         tokens: {
-            dai: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357" as `0x${string}`,
+            usdc: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357" as `0x${string}`,
         },
         chainSelector: 16015286601757825753n,
         fromBlock: 5913915n
@@ -52,6 +53,10 @@ export const generalConfig = {
 export const eventSigs = {
     PoolFactory: {
         poolCreated: "event PoolCreated(address indexed pool, address indexed tokenCurrentChain, address indexed tokenCrossChain, uint64 crosschainSelector)"
+    },
+    crossChainPool: {
+        deposited: "event DepositedAndMintedLpt(address indexed lp, uint256 indexed lptAmount, uint256 indexed underlyingAmount)",
+        teleported: "event TeleportStarted(uint256 indexed value, address indexed to)",
     }
 }
 
@@ -67,4 +72,33 @@ export type allowedChainSelectors =
     "3478487238524512106" |
     "14767482510784806043"
 
+
+enum TokensToIcon {
+    LINK = "icons-buckle/tokens/link-icon.svg",
+    USDC = "icons-buckle/tokens/usdc-icon.svg"
+}
+enum NetworkIcons {
+    ETHEREUM = "icons-buckle/chains/ethereum-icon.svg",
+    ARBITRUM = "icons-buckle/chains/arbitrum-icon.svg",
+    AVALANCHE = "icons-buckle/chains/avalanche-icon.svg",
+    POLYGON = "icons-buckle/chains/polygon-icon.svg",
+}
+
+export const addressesToIcons = {
+    "0xDbb077Ddec08E8b574186098359d30556AF6797D": TokensToIcon.USDC,
+    "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357": TokensToIcon.USDC,
+    "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E": TokensToIcon.LINK,
+    "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846": TokensToIcon.LINK,
+}
+
+export const selectorsToIcons = {
+    "16015286601757825753": NetworkIcons.ETHEREUM,
+    "3478487238524512106": NetworkIcons.ARBITRUM,
+    "14767482510784806043": NetworkIcons.AVALANCHE,
+    "0": NetworkIcons.POLYGON,
+}
+
+
+export const CCIP_EXPLORER_URL_ADDRESS = "https://ccip.chain.link/address/"
+export const CCIP_EXPLORER_URL_TX = "https://ccip.chain.link/tx/"
 

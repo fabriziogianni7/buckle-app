@@ -20,9 +20,9 @@ const config: Config = {
       center: true,
 
     },
-    
+
   },
- 
+
 
   plugins: [
     require('@tailwindcss/forms'),

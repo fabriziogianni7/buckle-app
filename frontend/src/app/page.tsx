@@ -1,6 +1,5 @@
 'use client'
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import PoolCreator from "./components/poolCreator/PoolCreator";
 import Image from 'next/image';
 
 export default function Home() {
