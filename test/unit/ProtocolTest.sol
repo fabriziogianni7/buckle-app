@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25; // up to
 
+/*//////////////////////////////////////////////////////////////
+            this file test the protocol interactions
+//////////////////////////////////////////////////////////////*/
+
 import {Test, console2} from "forge-std/Test.sol";
 import {Register} from "./helpers/Register.sol";
 import {PoolFactory} from "../../src/PoolFactory.sol";
-import {DeployPoolFactory} from "../../script/DeployPoolFactory.s.sol";
+import {DeployPoolFactory} from "../../script/deploy/DeployPoolFactory.s.sol";
 import {CrossChainPool} from "../../src/CrossChainPool.sol";
 import {CCIPLocalSimulatorFork} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
@@ -76,11 +80,12 @@ contract ProtocolTest is Test {
 
         ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
 
-        vm.startPrank(DEPLOYER);
-
         DeployPoolFactory deployPoolFactorySep = new DeployPoolFactory();
+        deployPoolFactorySep.setUp();
 
+        vm.startPrank(DEPLOYER);
         sepoliaFactory = deployPoolFactorySep.run();
+        console2.log("address(sepoliaFactory)", address(sepoliaFactory));
         vm.stopPrank();
 
         ////// ARBITRUM SEPOLIA //////
@@ -95,6 +100,7 @@ contract ProtocolTest is Test {
         ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
 
         DeployPoolFactory deployPoolFactoryArb = new DeployPoolFactory();
+        deployPoolFactoryArb.setUp();
 
         vm.startPrank(DEPLOYER);
         arbFactory = deployPoolFactoryArb.run();

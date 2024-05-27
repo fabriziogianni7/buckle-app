@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
+/*//////////////////////////////////////////////////////////////
+        this file is for unit tests on CrosschainPool.sol
+//////////////////////////////////////////////////////////////*/
+
 import {Test, console2} from "forge-std/Test.sol";
 import {CrossChainPool} from "../../src/CrossChainPool.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {DeployCrossChainPool} from "../../script/DeployCrossChainPool.s.sol";
+import {DeployCrossChainPool} from "../../script/deploy/DeployCrossChainPool.s.sol";
 import {MockRouter} from "./mock/MockRouter.sol";
 
-// todo update it with real pks
 contract CrossChainPoolTest is Test {
     CrossChainPool public crossChainPool;
     address public LP = address(1);
@@ -23,7 +26,6 @@ contract CrossChainPoolTest is Test {
         // call deposit
         underlying.approve(address(crossChainPool), STARTING_DEPOSIT);
         crossChainPool.deposit{value: ccipFees}(underlying, STARTING_DEPOSIT);
-        console2.log("balance of pool after deposit", underlying.balanceOf(address(crossChainPool)));
         assertEq(underlying.balanceOf(address(crossChainPool)), STARTING_DEPOSIT);
         vm.stopPrank();
         _;

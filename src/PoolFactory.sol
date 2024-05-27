@@ -42,24 +42,31 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  */
 
 contract PoolFactory is Ownable, CCIPReceiver {
-    // errors
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
     error PoolFactory__PoolDeploymentFailed();
     error PoolFactory__CrossChainDeploymentFailed(bytes call);
-    // interfaces, libraries, contracts
-    // Type declarations
 
+    /*//////////////////////////////////////////////////////////////
+                            TYPES DECLARATIONS
+    //////////////////////////////////////////////////////////////*/
     using SafeERC20 for IERC20;
 
-    // State variables
-    bytes32 private s_lastReceivedMessageId; // Store the last received messageId.
-    bytes32 private s_lastSentMessageId; // Store the last received messageId.
-    bytes private s_lastReceivedData; // Store the last received text.
+    /*//////////////////////////////////////////////////////////////
+                            STORAGE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+    bytes32 private s_lastReceivedMessageId;
+    bytes32 private s_lastSentMessageId;
+    bytes private s_lastReceivedData;
     address private immutable i_feeToken;
     uint64 private constant DEPLOY_POOL_FUNCTION_ID = 1;
     uint64 private constant SUCCESS_DEPLOY_FUNCTION_ID = 2;
     mapping(uint64 => address[]) private s_deployedPools; //  maps chain selector to pool array
 
-    // Events
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
     event PoolCreated(
         address indexed pool,
         address indexed tokenCurrentChain,
@@ -70,19 +77,21 @@ contract PoolFactory is Ownable, CCIPReceiver {
     event FeeTokenDeposited(address indexed sender);
     event FeeTokenWithdrawn();
 
-    // Modifiers
-
-    // Functions
+    /*//////////////////////////////////////////////////////////////
+                                 FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     constructor(address _ccipRouter, address _feeToken) CCIPReceiver(_ccipRouter) Ownable(msg.sender) {
         i_feeToken = _feeToken;
     }
 
-    // external
+    /*//////////////////////////////////////////////////////////////
+                                 EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice start the crosschain deployment flow
-     * it get called by a user that want to deploy new pool pairs
+     * it is called by the owner that want to deploy new pool pairs
      * the user should:
      *     1. select 2 networks
      * the contract should:
@@ -119,21 +128,31 @@ contract PoolFactory is Ownable, CCIPReceiver {
         return deployedPool;
     }
 
+    /**
+     * @notice used by the owner to deposit the fee token
+     * @param _amount amount of fee token to deposit
+     */
     function depositFeeToken(uint256 _amount) external {
         IERC20(i_feeToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit FeeTokenDeposited(msg.sender);
     }
 
+    /**
+     * @notice used by the owner to withdraw all the fee token
+     */
     function withdrawFeeToken() external onlyOwner {
         uint256 balance = IERC20(i_feeToken).balanceOf(address(this));
         IERC20(i_feeToken).safeTransfer(msg.sender, balance);
         emit FeeTokenWithdrawn();
     }
 
-    // public
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL / PRIVATE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
-    // internal/ private
-
+    /**
+     * @notice deploy pool on the current chain
+     */
     function _deployPool(
         address _underlyingToken,
         string memory _name,
@@ -158,13 +177,16 @@ contract PoolFactory is Ownable, CCIPReceiver {
     /**
      * @notice send a message crosschain to another factory to deploy a pool contract
      * @notice deployer should send fee token to this contract
-     * @param receiver the other factory on the other chain
-     * @param destinationChainSelector the destination chain chainlink selector id
+     * @param _receiver the other factory on the other chain
+     * @param _destinationChainSelector the destination chain chainlink selector id
+     * @param _underlyingOnOtherChain the address of the underlying token on the other chain
+     * @param _name name of pool
      * @param _deployedPoolAddress the deployed pool to add as a allowed sender
+     * @param _underlyingTokenOnSourceChain the address of the underlying token on the current chain
      */
     function _sendCCipMessageDeploy(
-        address receiver,
-        uint64 destinationChainSelector,
+        address _receiver,
+        uint64 _destinationChainSelector,
         address _underlyingOnOtherChain,
         string memory _name,
         address _deployedPoolAddress,
@@ -173,23 +195,23 @@ contract PoolFactory is Ownable, CCIPReceiver {
         address router = getRouter(); // it is the chainlink router for the current network
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(receiver), // receiver is the factory on destination chain
+            receiver: abi.encode(_receiver),
             data: abi.encode(
                 DEPLOY_POOL_FUNCTION_ID, _underlyingOnOtherChain, _name, _deployedPoolAddress, _underlyingTokenOnSourceChain
             ), //  the parameters to pass into _deployPool
-            tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
+            tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
                 Client.EVMExtraArgsV1({gasLimit: 3_000_000})
             ),
-            feeToken: i_feeToken // the token this contract will pay with
+            feeToken: i_feeToken
         });
 
-        uint256 fee = IRouterClient(router).getFee(destinationChainSelector, message);
+        uint256 fee = IRouterClient(router).getFee(_destinationChainSelector, message);
 
         IERC20(i_feeToken).approve(address(router), fee);
 
-        s_lastSentMessageId = IRouterClient(router).ccipSend(destinationChainSelector, message);
+        s_lastSentMessageId = IRouterClient(router).ccipSend(_destinationChainSelector, message);
     }
 
     /**
@@ -197,6 +219,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
      * @param _receiver the factory from the source chain
      * @param _destinationChainSelector the ccip selector of the chain to send the message
      * @param _deployedPoolAddress the pool address which was deployed
+     * @param _deployedPoolOnOtherChain the pool address which was deployed on the other chain
      */
     function _sendCCipMessageDeploySuccess(
         address _receiver,
@@ -207,16 +230,14 @@ contract PoolFactory is Ownable, CCIPReceiver {
         address router = getRouter(); // it is the chainlink router for the current network
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(_receiver), // receiver is the factory on destination chain
-            data: abi.encode(SUCCESS_DEPLOY_FUNCTION_ID, _deployedPoolAddress, "", _deployedPoolOnOtherChain, address(0)), //  the parameters to pass into _deployPool
-            tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
+            receiver: abi.encode(_receiver),
+            data: abi.encode(SUCCESS_DEPLOY_FUNCTION_ID, _deployedPoolAddress, "", _deployedPoolOnOtherChain, address(0)),
+            tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
                 Client.EVMExtraArgsV1({gasLimit: 400_000})
             ),
-            // _207_625
-            // 2_000_000
-            feeToken: i_feeToken // the token this contract will pay with
+            feeToken: i_feeToken
         });
 
         uint256 fee = IRouterClient(router).getFee(_destinationChainSelector, message);
@@ -224,13 +245,11 @@ contract PoolFactory is Ownable, CCIPReceiver {
         IERC20(i_feeToken).approve(address(router), fee);
 
         s_lastSentMessageId = IRouterClient(router).ccipSend(_destinationChainSelector, message);
-        // consider emit event here
     }
 
     /**
      * @notice inherits form ccipReceiver and allow the contract to receive messages from other factories
      *  @notice it should deploy a new pool in the network where this contract is received
-     *  todo should allow just a smart contract to send messages here (make check)
      *  should be ready to accept  3 type of msgs:
      *     pool deployment request
      *     succesfull deployment ack
@@ -241,11 +260,10 @@ contract PoolFactory is Ownable, CCIPReceiver {
      *     selector defines the type of received msg
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
-        // uint256 startGas = gasleft();
         s_lastReceivedMessageId = any2EvmMessage.messageId;
 
         // those are the parameters
-        s_lastReceivedData = any2EvmMessage.data; // maybe delete this line
+        s_lastReceivedData = any2EvmMessage.data;
 
         (
             uint64 functionID,
@@ -253,10 +271,9 @@ contract PoolFactory is Ownable, CCIPReceiver {
             string memory poolName,
             address peerDeployedPool,
             address underlyingTokenOnOtherChain
-        ) = abi.decode(any2EvmMessage.data, (uint64, address, string, address, address)); // abi-decoding of the sent text
+        ) = abi.decode(any2EvmMessage.data, (uint64, address, string, address, address));
 
         if (functionID == DEPLOY_POOL_FUNCTION_ID) {
-            // todo find a good way to handle error here
             (address deployedPool, bool success) = _deployPool(
                 underlyingTokenOrDeployedAddress,
                 poolName,
@@ -264,26 +281,19 @@ contract PoolFactory is Ownable, CCIPReceiver {
                 underlyingTokenOnOtherChain
             );
             if (success) {
-                //add the allowed sender -deployedPoolOnOtherChain- to the pool
+                // add the allowed sender -deployedPoolOnOtherChain- to the pool
                 CrossChainPool(deployedPool).addCrossChainSender(peerDeployedPool);
-                // send a fail msg
                 _sendCCipMessageDeploySuccess(
                     abi.decode(any2EvmMessage.sender, (address)),
                     any2EvmMessage.sourceChainSelector,
                     deployedPool, // current chain
                     peerDeployedPool // source chain
                 );
-                //todo emit an event here with the deployed pool
             } else {
                 revert PoolFactory__PoolDeploymentFailed();
             }
         }
 
-        // @todo send a fail msg if something goes wrong
-
-        // here is when I receive the "ACK" telling that the deployment is ok
-        //receving it from destination chain
-        // @todo think about a better way to avoid using mapping uint -> address array
         if (functionID == SUCCESS_DEPLOY_FUNCTION_ID) {
             s_deployedPools[any2EvmMessage.sourceChainSelector].push(underlyingTokenOrDeployedAddress);
 
@@ -292,19 +302,47 @@ contract PoolFactory is Ownable, CCIPReceiver {
         }
 
         emit MessageReceived(any2EvmMessage.messageId);
-        // uint256 endGas = gasleft();
-        // uint256 totalSpent = startGas - endGas;
     }
 
-    // view fucntions
-    /// @notice Fetches the details of the last received message.
-    /// @return messageId The ID of the last received message.
-    /// @return data the data last received message.
-    function getLastReceivedMessageDetails() external view returns (bytes32 messageId, bytes memory data) {
+    /*//////////////////////////////////////////////////////////////
+                         PUBLIC VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Fetches the details of the last received message.
+     * @return s_lastReceivedMessageId The ID of the last received message.
+     * @return s_lastReceivedData the data last received message.
+     */
+    function getLastReceivedMessageDetails() external view returns (bytes32, bytes memory) {
         return (s_lastReceivedMessageId, s_lastReceivedData);
     }
 
-    function getALlDeployedPoolsForChainSelector(uint64 chainSelector) external view returns (address[] memory) {
-        return s_deployedPools[chainSelector];
+    /**
+     * @return s_lastSentMessageId The ID of the last sent message.
+     */
+    function getLastSentMsg() external view returns (bytes32) {
+        return s_lastSentMessageId;
+    }
+
+    /**
+     * @return i_feeToken
+     */
+    function getFeeToken() external view returns (address) {
+        return address(i_feeToken);
+    }
+
+    /**
+     * @return i_ccipRouter
+     */
+    function getCcipRouter() external view returns (address) {
+        return i_ccipRouter;
+    }
+
+    /**
+     * @notice returns all the deployed pools for a ccip chain selectori
+     * @param _chainSelector the ccip chain selector
+     */
+    function getALlDeployedPoolsForChainSelector(uint64 _chainSelector) external view returns (address[] memory) {
+        return s_deployedPools[_chainSelector];
     }
 }

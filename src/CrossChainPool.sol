@@ -23,7 +23,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console2} from "forge-std/Test.sol";
+// import {console2} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -90,7 +90,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     // sum of storage space 32 bytes
 
     IERC20 private immutable i_otherChainUnderlyingToken;
-    uint16 private FEES_BPS = 500;
+    uint16 private s_fee_bps = 500;
     uint24 private s_gas_limit = 100_000;
     uint24 private s_cooldownPeriod = 6 hours;
     // sum of storage space 28 bytes
@@ -217,20 +217,6 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         i_underlyingToken = IERC20(_underlyingToken);
         i_otherChainUnderlyingToken = IERC20(_otherChainUnderlyingToken);
         i_crossChainSelector = _crossChainSelector;
-    }
-
-    /**
-     * @notice set values for gasLimit used by ccip sendMessage functions
-     */
-    function setGasLimitValues(uint24 _gas_limit) public onlyOwner {
-        s_gas_limit = _gas_limit;
-    }
-
-    /**
-     * @notice set the cooldown period (default 6 hours)
-     */
-    function setCooldownPeriod(uint24 _period) public onlyOwner {
-        s_cooldownPeriod = _period;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -361,6 +347,27 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         _sendCCipMessageTeleport(_value, fees, _to, router);
     }
 
+    /**
+     * @notice set values for gasLimit used by ccip sendMessage functions
+     */
+    function setGasLimitValues(uint24 _gas_limit) external onlyOwner {
+        s_gas_limit = _gas_limit;
+    }
+
+    /**
+     * @notice set the cooldown period (default 6 hours)
+     */
+    function setCooldownPeriod(uint24 _period) external onlyOwner {
+        s_cooldownPeriod = _period;
+    }
+
+    /**
+     * @notice set the fee percentage (default 5%)
+     */
+    function setFeePercentage(uint16 _fee_bps) external onlyOwner {
+        s_fee_bps = _fee_bps;
+    }
+
     /*//////////////////////////////////////////////////////////////
                            PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -406,14 +413,14 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
      *  @return fees
      */
     function calculateBuckleAppFees(uint256 _value) public view returns (uint256 fees) {
-        if ((_value * FEES_BPS) < 10_000) {
+        if ((_value * s_fee_bps) < 10_000) {
             revert CrossChainPool__AmountTooSmall();
         }
-        fees = (_value * FEES_BPS) / 10_0000;
+        fees = (_value * s_fee_bps) / 10_0000;
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 INTERNAL FUNCTIONS
+                        INTERNAL/ PRIVATE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -424,10 +431,10 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
             addr := mload(add(bys, 32))
         }
     }
+
     /*//////////////////////////////////////////////////////////////
                         INTERNAL: CCIP SEND MESSAGE
     //////////////////////////////////////////////////////////////*/
-
     /**
      * @notice send a message to the crosschain pool
      *  subtract value to teleport - fees from s_crossChainUnderlyingBalance
@@ -671,7 +678,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
             s_crossChainLiquidityPoolTokens += LiquidityTokensMinted;
         }
         if (functionID == REDEEM_FUNCTION_ID) {
-            // NOT subtracting amount redeemed on the source chain from s_crossChainUnderlyingBalance bc I did it already at cooldown
+            // NOT subtracting amounts on the source chain from s_crossChainUnderlyingBalance bc I did it already at cooldown
 
             (, uint256 AmountToRedeem, address to) = abi.decode(any2EvmMessage.data, (uint8, uint256, address));
 
@@ -730,7 +737,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 EXTERNAL VIEW FUNCTIONS
+                         EXTERNAL VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**

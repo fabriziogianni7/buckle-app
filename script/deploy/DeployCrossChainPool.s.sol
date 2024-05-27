@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Script} from "forge-std/Script.sol";
-import {CrossChainPool} from "../src/CrossChainPool.sol";
+import {CrossChainPool} from "../../src/CrossChainPool.sol";
 
 // todo update it with real pks
 contract DeployCrossChainPool is Script {

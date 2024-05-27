@@ -232,7 +232,7 @@ SOME POINTS TO GO OVER
 
 PLAN:
 - review OK
-  - need to remove the lp from crosschain balance TODO!!!
+  - need to remove the lp from crosschain balance OK
 - finalize FE
 - deploy pools on sepolia, arb sepolia, fuji, polygon amoy
 - ship FE on spheron
@@ -243,14 +243,16 @@ PLAN:
 
 
 REVIEW:
-- clean up and adding view functions as well as setters
-  - add getMaxTeleportAmount
+- clean up and adding view functions as well as setters OK
 - adding necessary natspec where needed OK
 - review storage layout OK
-- check that all the functions follow cex pattern
-- change the way the pools are deployed feom the factories  - (not doing that)
+- check that all the functions follow cex pattern OK 
+- review PoolFactory.sol OK
+- add more unit test for pool factory
 
 
+// general to implement in FE
+USE getCrossChainBalances to see what is the max amount I can teleport
 
 
 
