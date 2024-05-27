@@ -28,6 +28,7 @@ pragma solidity ^0.8.25;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -392,11 +393,12 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         view
         returns (uint256 redeemCurrentChain, uint256 redeemCrossChain)
     {
-        uint256 precision = 1e18;
+        uint256 precision = 1e24;
+
         uint256 totalReedemValue = getRedeemValueForLP(_lptAmount);
 
         (uint256 totaProtocolUnderlying,) = getTotalProtocolBalances();
-        // calculate how much to withdraw in each chain
+
         uint256 totalUnderlyingHere = i_underlyingToken.balanceOf(address(this));
 
         uint256 ratioCurrentChain = (totalUnderlyingHere * precision) / totaProtocolUnderlying;
@@ -404,7 +406,15 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         uint256 ratioCrossChain = (s_crossChainUnderlyingBalance * precision) / totaProtocolUnderlying;
 
         redeemCurrentChain = (totalReedemValue * ratioCurrentChain) / precision;
+
         redeemCrossChain = (totalReedemValue * ratioCrossChain) / precision;
+
+        // totaProtocolUnderlying =
+        // totalUnderlyingHere    =
+        // totalRedeem            =
+        // ratioCurrentChain      =
+        // ratioCrossChain        =
+        // totalRedeem            =
     }
 
     /**

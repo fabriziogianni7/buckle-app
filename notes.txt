@@ -248,7 +248,8 @@ REVIEW:
 - review storage layout OK
 - check that all the functions follow cex pattern OK 
 - review PoolFactory.sol OK
-- add more unit test for pool factory
+- add more unit test for pool factory OK
+- check why redeem precision is wrong
 
 
 // general to implement in FE

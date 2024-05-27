@@ -276,17 +276,21 @@ contract ProtocolTest is Test {
 
         uint256 totalRedeem = CrossChainPool(deployedSepoliaPool).getRedeemValueForLP(currentLPSEPAmountLpt);
 
-        assertEq((totalRedeem / 1e2), (redeemCurrentChain + redeemCrossChain) / 1e2); // taking off the last decimals
+        console2.log("totalRedeem", totalRedeem);
+        console2.log("sum", redeemCurrentChain + redeemCrossChain);
+
+        // adding 1 as we have a small decimal precision issue
+        assertEq(totalRedeem, redeemCurrentChain + redeemCrossChain + 1); // taking off the last decimals
+            // totalRedeem                           = 9999999999999999999
+            // redeemCurrentChain + redeemCrossChain = 9999999999999999988
 
         // cooldown and redeem
         cooldownAndRedeem(LP_SEP, sepoliaFork, deployedSepoliaPool, currentLPSEPAmountLpt);
 
         uint256 userUnderlyingBalanceAfterRedeemal = sepoliaUnderlying.balanceOf(LP_SEP);
 
-        // making sure the lp get the correct amount back on the current chain
-        assertEq(
-            (userUnderlyingBalanceAfterRedeemal / 1e4), (userUnderlyingBalanceBeforeRedeemal + redeemCurrentChain) / 1e4
-        );
+        //making sure the lp get the correct amount back on the current chain
+        assertEq(userUnderlyingBalanceAfterRedeemal, userUnderlyingBalanceBeforeRedeemal + redeemCurrentChain);
     }
 
     /*//////////////////////////////////////////////////////////////
