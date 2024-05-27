@@ -44,7 +44,7 @@ contract CrossChainPoolTest is Test {
 
     function testPoolDeployment() public view {
         string memory expectedName = crossChainPool.name();
-        assertEq(expectedName, "crossChainPoolTest");
+        assertEq(expectedName, "BUCKLEcrossChainPoolTest");
     }
 
     function testFirstDeposit() public deposited {
@@ -78,6 +78,8 @@ contract CrossChainPoolTest is Test {
         vm.startPrank(LP);
         // approving LPT
         crossChainPool.approve(address(crossChainPool), valueToBurn); // i'm not sure, dbc
+        crossChainPool.setCooldownForLp{value: 1}(valueToBurn);
+        vm.warp(block.timestamp + 24 hours);
         crossChainPool.redeem{value: 1}(valueToBurn, LP);
         vm.stopPrank();
 

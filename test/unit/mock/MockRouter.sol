@@ -8,21 +8,52 @@ contract MockRouter {
 
     /// @notice mock contract for local dummy tests
     function routeMessage(
-        Client.Any2EVMMessage calldata message,
-        uint16 gasForCallExactCheck,
-        uint256 gasLimit,
-        address receiver
-    ) external returns (bool success, bytes memory retBytes, uint256 gasUsed) {
+        Client.Any2EVMMessage calldata,
+        /**
+         * message
+         */
+        uint16,
+        /**
+         * gasForCallExactCheck
+         */
+        uint256,
+        /**
+         * gasLimit
+         */
+        address
+    )
+        /**
+         * receiver
+         */
+        external
+        pure
+        returns (bool success, bytes memory retBytes, uint256 gasUsed)
+    {
         success = true;
         retBytes = "";
         gasUsed = 1;
     }
 
-    function getFee(uint64 xchainselector, Client.EVM2AnyMessage memory message) public returns (uint256 fee) {
+    function getFee(
+        uint64,
+        /**
+         * xchainselector
+         */
+        Client.EVM2AnyMessage memory /*message*/
+    ) public pure returns (uint256 fee) {
         fee = 1;
     }
 
-    function ccipSend(uint64 xchainselector, Client.EVM2AnyMessage memory message)
+    function ccipSend(
+        uint64,
+        /**
+         * xchainselector
+         */
+        Client.EVM2AnyMessage memory
+    )
+        /**
+         * message
+         */
         public
         payable
         returns (bytes32 id)

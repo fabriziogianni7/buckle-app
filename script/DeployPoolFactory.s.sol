@@ -18,11 +18,16 @@ contract DeployPoolFactory is Script {
         config = new Config();
         activeConfig = config.getActiveNetworkConfig();
 
-        vm.startBroadcast();
+        // vm.startBroadcast();
+        console2.log("msg sender", msg.sender);
+        vm.startPrank(msg.sender);
+
         PoolFactory poolFactory = new PoolFactory(activeConfig.routerAddress, activeConfig.linkAddress);
         IERC20(activeConfig.linkAddress).approve(address(poolFactory), FEE_TOKEN_DEPOSIT_AMOUNT);
         poolFactory.depositFeeToken(FEE_TOKEN_DEPOSIT_AMOUNT);
-        vm.stopBroadcast();
+
+        vm.stopPrank();
+        // vm.stopBroadcast();
         return poolFactory;
     }
 }

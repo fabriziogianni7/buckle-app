@@ -23,7 +23,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// import {console2} from "forge-std/Test.sol";
+import {console2} from "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -39,26 +39,26 @@ import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
  * @notice
  * This contract is deployed in pair with the same token on another chain
  * eg.
- *     I deploy CrossChainPoolWETH on Base and deploy CrossChainPoolWETH on Arb
+ *     I deploy CrossChainPoolWETH on Base and deploy CrossChainPoolWETH on Arbitrum
  *     those 2 contracts will be able to exchange liquidity crosschain
  * @custom:functionalities
- *  Users can bridge tokens to the other network
- *  Contract should forward tokens bridged from the other network
+ *  Users can "teleport" tokens to the other networks
  *  LPs can deposit underlying and get LPTs in exchange
  *  LPs can withdraw underlying and burn LPTS
  * @custom:roles
  *  there are 2 roles:
- *     users: the ones that use this contracts as a bridge
+ *     users: the ones that use this contracts as a bridge aka teleport
  *     LPs: users which put liquidity on the pools
- * @custom:formulas
- *  1LPT = total crosschain underlying / total crosschain LPTS
  * @custom:invariant
- * we want the ratio between underlying tokens and LPTs always > 1
- *  @custom:interfaces
- *     inherit from CCIP contracts and functions contracts
+ *  we want the ratio between underlying tokens and LPTs always >= 1 ---> Underlying / LPT >= 1
+ * uderlying
+ *  value of 1 LPT should always be equal or or less than the value of underlying token
+ * DO NOT USE THIS CONTRACT IN MAINNET as it's not audited and still in beta version
  */
 contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
-    // errors
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
     error CrossChainPool__ShouldBeMoreThanZero();
     error CrossChainPool__WrongUnderlying();
     error CrossChainPool__NotLP();
@@ -69,54 +69,85 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     error CrossChainPool__NotEnoughBalanceToRedeem();
     error CrossChainPool__NotEnoughBalanceToRedeemCrossChain();
     error CrossChainPool__NotEnoughBalanceToRedeemCurrentChain();
+    error CrossChainPool__CooldownNotExpired();
+    error CrossChainPool__CooldownAmountTooHigh();
 
-    // interfaces, libraries, contracts
-
-    // Type declarations
+    /*//////////////////////////////////////////////////////////////
+                            TYPES DECLARATIONS
+    //////////////////////////////////////////////////////////////*/
     using SafeERC20 for IERC20;
 
-    // State variables
-    IERC20 private immutable i_underlyingToken;
-    IERC20 private immutable i_otherChainUnderlyingToken;
-    uint64 private immutable i_crossChainSelector;
-    address private s_crossChainPool; // the address of the other chain linked to this one
-    bytes32 private s_lastSentMessageId;
-    bytes32 private s_lastReceivedMessageId; // Store the last received messageId.
-    mapping(address => uint256) private readyToWithdraw;
+    /*//////////////////////////////////////////////////////////////
+                            STORAGE VARIABLES
+    //////////////////////////////////////////////////////////////*/
 
+    IERC20 private immutable i_underlyingToken;
+    uint64 private immutable i_crossChainSelector;
     uint8 private constant TELEPORT_FUNCTION_ID = 1;
     uint8 private constant DEPOSIT_FUNCTION_ID = 2;
     uint8 private constant REDEEM_FUNCTION_ID = 3;
-    uint256 private FEES_BPS = 500;
-    uint256 private s_gas_limit_teleport = 100_000;
-    uint256 private s_gas_limit_deposit = 120_000;
-    uint256 private s_gas_limit_redeem = 1_000_000;
+    uint8 private constant COOLDOWN_FUNCTION_ID = 4;
+    // sum of storage space 32 bytes
+
+    IERC20 private immutable i_otherChainUnderlyingToken;
+    uint16 private FEES_BPS = 500;
+    uint24 private s_gas_limit = 100_000;
+    uint24 private s_cooldownPeriod = 6 hours;
+    // sum of storage space 28 bytes
+
+    address private s_crossChainPool; // the address of the other chain linked to this one
+
+    bytes32 private s_lastSentMessageId;
+
+    bytes32 private s_lastReceivedMessageId;
 
     uint256 private s_crossChainUnderlyingBalance;
+
     uint256 private s_crossChainLiquidityPoolTokens;
 
-    // Events
-    event DepositedAndMintedLpt(address indexed lp, uint256 indexed lptAmount, uint256 indexed underlyingAmount);
-    event RedeemedCurrentChain(
-        address indexed lp, uint256 indexed lptAmountBurnt, uint256 indexed underlyingAmount, uint256 chainid
+    mapping(address => uint256) private readyToWithdraw;
+    mapping(address => uint256) private s_cooldownAmount;
+    mapping(address => uint256) private s_cooldown;
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+    event DepositedAndMintedLpt(
+        address indexed lp,
+        uint256 indexed lptAmount,
+        address indexed underlyingToken,
+        uint256 underlyingAmount,
+        uint256 chainid
     );
-    event RedeemedCrossChain(
-        address indexed lp, uint256 indexed underlyingAmount, uint256 chainid, bytes32 indexed messageId
+
+    event Redeem(address indexed lp, uint256 indexed underlyingAmount, uint256 indexed chainid);
+
+    event Teleport(
+        uint256 indexed teleportedAmount, address indexed to, address indexed underlyingToken, uint64 crosschainSelector
     );
-    event TeleportStarted(uint256 indexed value, address indexed to);
+
     event MessageReceived(bytes32 indexed messageId);
 
-    // Modifiers
-    modifier areSenderAndSelectorAllowed(address _sender, uint64 _selector) {
+    /*//////////////////////////////////////////////////////////////
+                                 MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice check if crosschainsender and cross chain are allowed to send messages here
+     */
+    modifier areSenderAndSelectorAllowed(bytes memory _sender, uint64 _selector) {
+        address decodedSender = _bytesToAddress(_sender);
         (address allowedSender, uint64 allowedSelector) = getCrossChainSenderAndSelector();
 
-        if (allowedSender != _sender || allowedSelector != _selector) {
+        if (allowedSender != decodedSender || allowedSelector != _selector) {
             revert CrossChainPool__SenderOrSelectorNotAllowed();
         }
-
         _;
     }
 
+    /**
+     * @notice if amount is <= 0 revert
+     */
     modifier moreThanZero(uint256 amount) {
         if (amount <= 0) {
             revert CrossChainPool__ShouldBeMoreThanZero();
@@ -124,6 +155,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         _;
     }
 
+    /**
+     * @notice check if the token being deposited is correct
+     */
     modifier isCorrectToken(IERC20 token) {
         if (token != i_underlyingToken) {
             revert CrossChainPool__WrongUnderlying();
@@ -131,17 +165,42 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         _;
     }
 
+    /**
+     * @notice check if user is a lp
+     */
     modifier isUserLiquidityProvider() {
         if (balanceOf(msg.sender) <= 0) {
             revert CrossChainPool__NotLP();
         }
         _;
     }
-    // Functions
 
-    // @todo the ERC20 should have a better name specifying the networks
     /**
-     * @notice instantiate the pool
+     * @notice check if cooldown period is passed
+     */
+    modifier isCooldownPeriodExpired() {
+        if (!_isCooldownExpired(msg.sender)) {
+            revert CrossChainPool__CooldownNotExpired();
+        }
+        _;
+    }
+
+    /**
+     * @notice check the amount being redeemed is
+     */
+    modifier isLPRedeemingCorrectAmount(uint256 _amount) {
+        if (s_cooldownAmount[msg.sender] > _amount) {
+            revert CrossChainPool__CooldownAmountTooHigh();
+        }
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice creates the pool
      * @param _underlyingToken is the ERC20 that gets teleported
      * @param _name is the name of this pool
      * @param _crossChainSelector is the corresponding pool selector on the other network
@@ -154,42 +213,63 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         uint64 _crossChainSelector,
         address _router,
         address _otherChainUnderlyingToken
-    ) ERC20(_name, "LPT") CCIPReceiver(_router) Ownable(msg.sender) {
+    ) ERC20(string.concat("BUCKLE", _name), string.concat("BCK", _name)) CCIPReceiver(_router) Ownable(msg.sender) {
         i_underlyingToken = IERC20(_underlyingToken);
         i_otherChainUnderlyingToken = IERC20(_otherChainUnderlyingToken);
         i_crossChainSelector = _crossChainSelector;
     }
 
-    function setGasLimitValues(uint256 _gas_limit_teleport, uint256 _gas_limit_deposit, uint256 _gas_limit_redeem)
-        public
-        onlyOwner
-    {
-        if (_gas_limit_teleport != 0) {
-            s_gas_limit_teleport = _gas_limit_teleport;
-        }
-        if (_gas_limit_deposit != 0) {
-            s_gas_limit_deposit = _gas_limit_deposit;
-        }
-        if (_gas_limit_redeem != 0) {
-            s_gas_limit_redeem = _gas_limit_redeem;
-        }
+    /**
+     * @notice set values for gasLimit used by ccip sendMessage functions
+     */
+    function setGasLimitValues(uint24 _gas_limit) public onlyOwner {
+        s_gas_limit = _gas_limit;
     }
 
-    // external
+    /**
+     * @notice set the cooldown period (default 6 hours)
+     */
+    function setCooldownPeriod(uint24 _period) public onlyOwner {
+        s_cooldownPeriod = _period;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice set cooldown period for the LP
+     * LPs need to wait at least 6 hours before redeeming their tokens
+     * when a cooldown is set this function send a message crosschain to update the balances of the pool pair
+     *  subtracts the redeemCrossChain value from the crosschain balance of current pool
+     *  subtract the redeemCurrentChain value from the crosschain balance
+     *  of crosschainPool pool
+     * @param _lptAmount the amount of liquidity pool tokens to burn
+     */
+    function setCooldownForLp(uint256 _lptAmount) external payable isUserLiquidityProvider {
+        s_cooldown[msg.sender] = block.timestamp;
+        s_cooldownAmount[msg.sender] = _lptAmount;
+
+        (uint256 redeemCurrentChain, uint256 redeemCrossChain) = calculateAmountToRedeem(_lptAmount);
+
+        s_crossChainUnderlyingBalance -= redeemCrossChain;
+
+        _sendCCipMessageCooldown(redeemCurrentChain, _lptAmount, getRouter());
+    }
+
     /**
      * @notice mint LPTs to LPs and get the underlyng in exchange
      * @notice LPs cannot deposit crosschain -> they need to switch network if they want to deposit in the other pool
-     *  @notice this function should send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens (adding these values on other pool)
+     *  @notice this function send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens (adding these values on other pool)
      *
      * @param _token the token to deposit as underlying
      * @param _amount the _amount to deposit as underlying
-     * @custom:security follow CEI pattern Cecks Effects Interactions
      */
     function deposit(IERC20 _token, uint256 _amount) external payable isCorrectToken(_token) moreThanZero(_amount) {
         // calculate the LPT to mint
         uint256 lptAmount = calculateLPTinExchangeOfUnderlying(_amount);
 
-        emit DepositedAndMintedLpt(msg.sender, lptAmount, _amount);
+        emit DepositedAndMintedLpt(msg.sender, lptAmount, address(i_underlyingToken), _amount, block.chainid);
 
         // transfer underlying to this contract
         _token.safeTransferFrom(msg.sender, address(this), _amount);
@@ -202,18 +282,26 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     }
 
     /**
-     * @notice burn amount of LPs and transfer amount of underlying tokens to LP
-     *  @notice this function should send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens and update it here! (in the current network, I want to subtract what will be redeemed/burned in the other chain)
-     *  @notice this function should send a message crosschain giving the right part of underlying to the LP crosschain
-     *  calculating the am of tokens to redeem in this and other chain:
+     * @notice burn amount of LPTs and transfer amount of underlying tokens to LP
+     * @notice this function should send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens and update it here! (in the current network, I want to subtract what will be redeemed/burned in the other chain)
+     *  @notice this function should send a message crosschain giving the right amount of underlying tokens to the LP on the other chain
+     *  calculating the amount of tokens to redeem in this and other chain:
      *  1. calculate value of 1 lpt
      *  2. multiply times the n of lpt to burn
      *  3. calculate how much liquidity each pool have in %
      *         lets say here there are 30% weth and on the other chain 70%
-     *         the user should get 30% of its burned token here and 70% there
+     *         the user should get 30% of its burned token on current chain and 70% on the other chain
+     *  befoore calling this, the lp should call setCooldownForLp
      * @param _lptAmount the LPT amount to burn
      */
-    function redeem(uint256 _lptAmount, address _to) external payable nonReentrant isUserLiquidityProvider {
+    function redeem(uint256 _lptAmount, address _to)
+        external
+        payable
+        nonReentrant
+        isUserLiquidityProvider
+        isCooldownPeriodExpired
+        isLPRedeemingCorrectAmount(_lptAmount)
+    {
         // check that user has funds
         if (balanceOf(msg.sender) < _lptAmount) {
             revert CrossChainPool__NotEnoughBalanceToRedeem();
@@ -228,7 +316,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
             revert CrossChainPool__NotEnoughBalanceToRedeemCrossChain();
         }
 
-        emit RedeemedCurrentChain(msg.sender, _lptAmount, redeemCurrentChain, block.chainid);
+        emit Redeem(msg.sender, redeemCurrentChain, block.chainid);
 
         // burn lp
         _burn(msg.sender, _lptAmount);
@@ -242,15 +330,17 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
 
     /**
      * @notice add the crosschain sender of the other pool
-     * todo add access control (onlyRouter)
+     *  s_crossChainPool cannot be modified
      */
     function addCrossChainSender(address _sender) external {
-        s_crossChainPool = _sender;
+        if (s_crossChainPool == address(0)) {
+            s_crossChainPool = _sender;
+        }
     }
 
     /**
-     * @notice users deposit here underlying token and send a message to the other pool crosschain to make the teleportation of the tokens
-     *  @notice this function should also send a message updating s_crossChainUnderlyingBalance and also update here;
+     * @notice users deposit here underlying tokens and send a message to the other pool crosschain that will send the teleported token to the _to address specified in this function
+     *  @notice this function should also send a message updating s_crossChainUnderlyingBalance and also update it here;
      *  @notice this function should be called after forecasting ccipFees
      *  @notice fees are paid in underlying token
      *  @param _value the amount to teleport
@@ -259,33 +349,31 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     function teleport(uint256 _value, address _to) external payable {
         address router = getRouter();
 
-        // add the amount to the count of teleported amount to account it later for LP fees
-
-        // user deposit underlying tokens
-        emit TeleportStarted(_value, _to);
-
         // protocol fees
         uint256 fees = calculateBuckleAppFees(_value);
+
+        // user deposit underlying tokens
+        emit Teleport(_value, _to, address(i_underlyingToken), i_crossChainSelector);
+
         i_underlyingToken.safeTransferFrom(msg.sender, address(this), _value);
+
         // send a message to other pool
         _sendCCipMessageTeleport(_value, fees, _to, router);
     }
 
-    // function teleportTransfer() external {} --> send tokens bridged from th other network to user, receive a message from ccip (maybe internal)
+    /*//////////////////////////////////////////////////////////////
+                           PUBLIC FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
-    // public
     /**
      * @notice calculate the correct amount to mint for the input underlying amount
      *  1 LPT = total cross-chain underlying / total crosschain LPT
-     * formula: totalDeposit / valueOfOneLpt
      * @param _amountOfUnderlyingToDeposit the amount to deposit
      * @custom:assumption we assume the ERC20 always have 18 decimals
      */
     function calculateLPTinExchangeOfUnderlying(uint256 _amountOfUnderlyingToDeposit) public view returns (uint256) {
         uint256 valueOfOneLpt = getValueOfOneLpt();
         uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e18) / valueOfOneLpt);
-        // uint256 lptAmount = ((_amountOfUnderlyingToDeposit * 1e5) / valueOfOneLpt) * 1e13;
-        // // console2.log("lptAmount", lptAmount);
         return lptAmount;
     }
 
@@ -321,14 +409,30 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         if ((_value * FEES_BPS) < 10_000) {
             revert CrossChainPool__AmountTooSmall();
         }
-
         fees = (_value * FEES_BPS) / 10_0000;
     }
 
-    // internal
+    /*//////////////////////////////////////////////////////////////
+                                 INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
-    ///////// CCIP SEND MESSAGE /////////
+    /**
+     * @notice convert bytes sneder sent by ccip router to address
+     */
+    function _bytesToAddress(bytes memory bys) private pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys, 32))
+        }
+    }
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL: CCIP SEND MESSAGE
+    //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice send a message to the crosschain pool
+     *  subtract value to teleport - fees from s_crossChainUnderlyingBalance
+     *  fees are retained in destination chain
+     */
     function _sendCCipMessageTeleport(uint256 _value, uint256 _fees, address _to, address _router) internal {
         Client.EVM2AnyMessage memory message = _buildTeleportMessage(_value, _fees, _to);
 
@@ -338,8 +442,6 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         }
 
         unchecked {
-            // if the balance on other chain is less than 0, revert
-            // check for gas improvement here
             if (s_crossChainUnderlyingBalance <= _value) {
                 revert CrossChainPool__NotEnoughBalanceOnDestinationPool();
             }
@@ -351,6 +453,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         s_lastSentMessageId = IRouterClient(_router).ccipSend{value: msg.value}(i_crossChainSelector, message);
     }
 
+    /**
+     * @notice send a message for depositing tokens
+     */
     function _sendCCipMessageDeposit(
         uint256 _underlyingDepositedAmount,
         uint256 _liquidityTokensMinted,
@@ -366,6 +471,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         s_lastSentMessageId = IRouterClient(_router).ccipSend{value: msg.value}(i_crossChainSelector, message);
     }
 
+    /**
+     * @notice send message to redeem tokens on destination chain
+     */
     function _sendCCipMessageRedeem(
         uint256 _amountToRedeem,
         uint256 _amountRedeemedOnSourceChain,
@@ -382,50 +490,23 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         s_lastSentMessageId = IRouterClient(_router).ccipSend{value: msg.value}(i_crossChainSelector, message);
     }
 
-    /// see CCIPReceiver.sol
-    // todo add events for each functionID
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
-        // uint256 startGas = gasleft();
-        s_lastReceivedMessageId = any2EvmMessage.messageId;
+    /**
+     * @notice send a message for the cooldown
+     */
+    function _sendCCipMessageCooldown(uint256 _cooldownAmount, uint256 _lptAmount, address _router) internal {
+        Client.EVM2AnyMessage memory message = _buildCooldownMessage(_cooldownAmount, _lptAmount);
 
-        (
-            uint8 functionID,
-            uint256 valueOrUnderlyingDepositedAmountOrAmountToRedeem,
-            uint256 feesOrLiquidityTokensMintedOrRedeemedAmount,
-            address to
-        ) = abi.decode(any2EvmMessage.data, (uint8, uint256, uint256, address));
+        uint256 ccipFees = IRouterClient(_router).getFee(i_crossChainSelector, message);
+        if (msg.value < ccipFees) {
+            revert CrossChainPool__UserCCipFeesNotEnough();
+        }
 
-        if (functionID == TELEPORT_FUNCTION_ID) {
-            // add
-            s_crossChainUnderlyingBalance += valueOrUnderlyingDepositedAmountOrAmountToRedeem; //should be + fees
-            i_underlyingToken.safeTransfer(
-                to, valueOrUnderlyingDepositedAmountOrAmountToRedeem - feesOrLiquidityTokensMintedOrRedeemedAmount
-            ); //todo review this
-        }
-        if (functionID == DEPOSIT_FUNCTION_ID) {
-            // adding these values to the balance of the other crosschainPool
-            s_crossChainUnderlyingBalance += valueOrUnderlyingDepositedAmountOrAmountToRedeem;
-            s_crossChainLiquidityPoolTokens += feesOrLiquidityTokensMintedOrRedeemedAmount;
-        }
-        if (functionID == REDEEM_FUNCTION_ID) {
-            // subtract amount redeemed on the source chain from s_crossChainUnderlyingBalance
-            s_crossChainUnderlyingBalance -= feesOrLiquidityTokensMintedOrRedeemedAmount;
-
-            // send underlying to to address
-            i_underlyingToken.safeTransfer(to, valueOrUnderlyingDepositedAmountOrAmountToRedeem);
-            emit RedeemedCrossChain(
-                to, valueOrUnderlyingDepositedAmountOrAmountToRedeem, block.chainid, any2EvmMessage.messageId
-            );
-            // uint256 endGasRedeem = gasleft();
-            // uint256 totalSpent = startGas - endGasRedeem;
-            // console2.log("total gas spent, redeem FUNCTION_ID", totalSpent, functionID);
-        }
-        emit MessageReceived(any2EvmMessage.messageId);
-        // uint256 endGas = gasleft();
-        // uint256 totalSpent = startGas - endGas;
-        // console2.log("total gas spent, pool, FUNCTION_ID, chainid", totalSpent, functionID, block.chainid);
+        s_lastSentMessageId = IRouterClient(_router).ccipSend{value: msg.value}(i_crossChainSelector, message);
     }
 
+    /**
+     * @notice build the deposit message
+     */
     function _buildDepositMessage(uint256 _underlyingDepositedAmount, uint256 _liquidityTokensMinted)
         internal
         view
@@ -433,16 +514,19 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     {
         message = Client.EVM2AnyMessage({
             receiver: abi.encode(s_crossChainPool), // receiver is the pool on destination chain
-            data: abi.encode(DEPOSIT_FUNCTION_ID, _underlyingDepositedAmount, _liquidityTokensMinted, address(0)), //  the parameters to pass into deployPool
+            data: abi.encode(DEPOSIT_FUNCTION_ID, _underlyingDepositedAmount, _liquidityTokensMinted), //  the parameters to pass into deployPool
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_deposit})
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit})
             ),
             feeToken: address(0) // will pay with eth
         });
     }
 
+    /**
+     * @notice build the redeem message
+     */
     function _buildRedeemMessage(uint256 _amountToRedeem, uint256 _amountRedeemedOnSourceChain, address _to)
         internal
         view
@@ -454,12 +538,55 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_redeem})
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit})
             ),
             feeToken: address(0) // will pay with eth
         });
     }
 
+    /**
+     * @notice build the cooldown message
+     */
+    function _buildCooldownMessage(uint256 _cooldownAmount, uint256 _lptAmount)
+        internal
+        view
+        returns (Client.EVM2AnyMessage memory message)
+    {
+        message = Client.EVM2AnyMessage({
+            receiver: abi.encode(s_crossChainPool),
+            data: abi.encode(COOLDOWN_FUNCTION_ID, _cooldownAmount, _lptAmount),
+            tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
+            extraArgs: Client._argsToBytes(
+                // Additional arguments, setting gas limit
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit})
+            ),
+            feeToken: address(0) // will pay with eth
+        });
+    }
+
+    /**
+     * @notice build the teleport message
+     */
+    function _buildTeleportMessage(uint256 _value, uint256 _fees, address _to)
+        internal
+        view
+        returns (Client.EVM2AnyMessage memory message)
+    {
+        message = Client.EVM2AnyMessage({
+            receiver: abi.encode(s_crossChainPool),
+            data: abi.encode(TELEPORT_FUNCTION_ID, _value, _fees, _to),
+            tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
+            extraArgs: Client._argsToBytes(
+                // Additional arguments, setting gas limit
+                Client.EVMExtraArgsV1({gasLimit: s_gas_limit})
+            ),
+            feeToken: address(0) // will pay with eth
+        });
+    }
+
+    /**
+     * @notice build the teleport message
+     */
     function _simulateMessageTeleport(uint256 _value, address _to)
         internal
         view
@@ -469,6 +596,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         message = _buildTeleportMessage(_value, fees, _to);
     }
 
+    /**
+     * @notice simulate the deposit message - needed to evaluate the cost of deposit in ccip fees
+     */
     function _simulateMessageDeposit(uint256 _underlyingDepositedAmount)
         internal
         view
@@ -479,6 +609,9 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         message = _buildDepositMessage(_underlyingDepositedAmount, lptToMint);
     }
 
+    /**
+     * @notice @notice simulate the redeem message - needed to evaluate the cost of reedeming in ccip fees
+     */
     function _simulateMessageRedeem(uint256 _lptToken, address _to)
         internal
         view
@@ -489,25 +622,76 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         message = _buildRedeemMessage(redeemCrossChain, redeemCurrentChain, _to);
     }
 
-    function _buildTeleportMessage(uint256 _value, uint256 _fees, address _to)
+    /**
+     * @notice @notice simulate the cooldown message - needed to evaluate the cost of cooldown in ccip fees
+     */
+    function _simulateMessageCooldown(uint256 _lptAmount)
         internal
         view
         returns (Client.EVM2AnyMessage memory message)
     {
-        message = Client.EVM2AnyMessage({
-            receiver: abi.encode(s_crossChainPool), // receiver is the pool on destination chain
-            data: abi.encode(TELEPORT_FUNCTION_ID, _value, _fees, _to), //  the parameters to pass into deployPool
-            // data: abi.encode(TELEPORT_FUNCTION_ID, _value - _fees, _fees, _to), //  the parameters to pass into deployPool
-            tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
-            extraArgs: Client._argsToBytes(
-                // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: s_gas_limit_teleport})
-            ),
-            feeToken: address(0) // will pay with eth
-        });
+        (uint256 redeemCurrentChain,) = calculateAmountToRedeem(_lptAmount);
+
+        message = _buildCooldownMessage(redeemCurrentChain, _lptAmount);
     }
 
-    ///////// CCIP FEES /////////
+    /**
+     * @notice helper function to see if the cooldown period has expired
+     */
+    function _isCooldownExpired(address lp) internal view returns (bool) {
+        return s_cooldown[lp] + (block.timestamp - s_cooldown[lp]) > s_cooldown[lp] + s_cooldownPeriod;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             CCIP RECEIVE MESSAGE
+    //////////////////////////////////////////////////////////////*/
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
+        internal
+        override
+        areSenderAndSelectorAllowed(any2EvmMessage.sender, any2EvmMessage.sourceChainSelector)
+    {
+        s_lastReceivedMessageId = any2EvmMessage.messageId;
+
+        // first decoding only functionID
+        (uint8 functionID) = abi.decode(any2EvmMessage.data, (uint8));
+
+        if (functionID == TELEPORT_FUNCTION_ID) {
+            (, uint256 teleportedValue, uint256 feesForTeleporting, address to) =
+                abi.decode(any2EvmMessage.data, (uint8, uint256, uint256, address));
+
+            s_crossChainUnderlyingBalance += teleportedValue; //should be + fees
+            i_underlyingToken.safeTransfer(to, teleportedValue - feesForTeleporting);
+        }
+        if (functionID == DEPOSIT_FUNCTION_ID) {
+            (, uint256 UnderlyingDeposited, uint256 LiquidityTokensMinted) =
+                abi.decode(any2EvmMessage.data, (uint8, uint256, uint256));
+
+            // adding these values to the balance of the other crosschainPool
+            s_crossChainUnderlyingBalance += UnderlyingDeposited;
+            s_crossChainLiquidityPoolTokens += LiquidityTokensMinted;
+        }
+        if (functionID == REDEEM_FUNCTION_ID) {
+            // NOT subtracting amount redeemed on the source chain from s_crossChainUnderlyingBalance bc I did it already at cooldown
+
+            (, uint256 AmountToRedeem, address to) = abi.decode(any2EvmMessage.data, (uint8, uint256, address));
+
+            // send underlying to to address
+            i_underlyingToken.safeTransfer(to, AmountToRedeem);
+            emit Redeem(to, AmountToRedeem, block.chainid);
+        }
+        if (functionID == COOLDOWN_FUNCTION_ID) {
+            // todo need to remove the lp from crosschain balance
+            (, uint256 _cooldownAmount, uint256 _lptAmount) = abi.decode(any2EvmMessage.data, (uint8, uint256, uint256));
+            s_crossChainUnderlyingBalance -= _cooldownAmount;
+            s_crossChainLiquidityPoolTokens -= _lptAmount;
+        }
+
+        emit MessageReceived(any2EvmMessage.messageId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             CCIP FEES
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice this is used with teleport function to forecast the ccip fees and let the user pay those fees
@@ -527,25 +711,38 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         return IRouterClient(router).getFee(i_crossChainSelector, message);
     }
 
+    /**
+     * @notice this is used with redeem function to forecast the ccip fees and let the user pay those fees
+     */
     function getCCipFeesForRedeem(uint256 _lptAmount, address _to) public view returns (uint256) {
         address router = getRouter();
         Client.EVM2AnyMessage memory message = _simulateMessageRedeem(_lptAmount, _to);
         return IRouterClient(router).getFee(i_crossChainSelector, message);
     }
 
-    // view fucntions
+    /**
+     * @notice this is used with cooldown function to forecast the ccip fees and let the user pay those fees
+     */
+    function getCCipFeesForCooldown(uint256 _lptAmount) public view returns (uint256) {
+        address router = getRouter();
+        Client.EVM2AnyMessage memory message = _simulateMessageCooldown(_lptAmount);
+        return IRouterClient(router).getFee(i_crossChainSelector, message);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 EXTERNAL VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice get the underlyng token for this pool
+     */
     function getUnderlyingToken() external view returns (IERC20) {
         return i_underlyingToken;
     }
 
-    function getCrossChainSenderAndSelector() public view returns (address, uint64) {
-        return (s_crossChainPool, i_crossChainSelector);
-    }
-
-    function getOtherChainUnderlyingToken() public view returns (address) {
-        return address(i_otherChainUnderlyingToken);
-    }
-
+    /**
+     * @notice get the balances of the pool on the other chain
+     */
     function getCrossChainBalances()
         external
         view
@@ -554,6 +751,34 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         return (s_crossChainUnderlyingBalance, s_crossChainLiquidityPoolTokens);
     }
 
+    /**
+     * @notice get the cooldown timestamp for the lp
+     */
+    function getCooldown(address lp) external view returns (uint256, bool) {
+        return (s_cooldown[lp], _isCooldownExpired(lp));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         PUBLIC VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice get the allowed pool and chain
+     */
+    function getCrossChainSenderAndSelector() public view returns (address, uint64) {
+        return (s_crossChainPool, i_crossChainSelector);
+    }
+
+    /**
+     * @notice get the address of the underlying crosschain
+     */
+    function getOtherChainUnderlyingToken() public view returns (address) {
+        return address(i_otherChainUnderlyingToken);
+    }
+
+    /**
+     * @notice get the sum of the protocol balance (sum the balances in this chain and in the other chain)
+     */
     function getTotalProtocolBalances() public view returns (uint256 totalUnderlyingBal, uint256 totalLptBal) {
         totalUnderlyingBal = s_crossChainUnderlyingBalance + i_underlyingToken.balanceOf(address(this));
         totalLptBal = s_crossChainLiquidityPoolTokens + totalSupply();
@@ -574,15 +799,20 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
             return 1e18;
         }
 
-        // value = ((totalCrossChainUnderlyingAmount * 1e5) / totalCrossChainLPTAmount) * 1e13;
         value = ((totalCrossChainUnderlyingAmount * 1e18) / totalCrossChainLPTAmount);
     }
 
+    /**
+     * @notice get how much lp get back from the lpt amount
+     */
     function getRedeemValueForLP(uint256 _lptAmount) public view returns (uint256 reedemValue) {
         reedemValue = (_lptAmount * getValueOfOneLpt()) / 1e18;
     }
 
-    function getGasLimitValues() public view returns (uint256, uint256, uint256) {
-        return (s_gas_limit_teleport, s_gas_limit_deposit, s_gas_limit_redeem);
+    /**
+     * @notice get the gas limit needed to send ccip messages
+     */
+    function getGasLimitValues() public view returns (uint256) {
+        return s_gas_limit;
     }
 }

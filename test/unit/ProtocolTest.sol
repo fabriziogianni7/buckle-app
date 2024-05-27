@@ -9,7 +9,7 @@ import {CrossChainPool} from "../../src/CrossChainPool.sol";
 import {CCIPLocalSimulatorFork} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
-contract CrossChainProtocolTest is Test {
+contract ProtocolTest is Test {
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
 
     uint64 public sepoliaChainSelector = 16015286601757825753;
@@ -35,15 +35,32 @@ contract CrossChainProtocolTest is Test {
 
     uint256 public ERC20_MINT_AMOUNT = 10e18;
     uint256 public INITIAL_MINT_AMOUNT_LP_SEPOLIA = 1000e18;
-    uint256 public INITIAL_DEPOSIT_ARB_LP_SEPOLIA = 15e18;
+    uint256 public INITIAL_DEPOSIT_LP = 15e18;
+    uint256 public MODIFIER_TELEPORT_AMOUNT = 5e18;
 
-    // 1. deploy factories on 2 networks ok
-    // 2. call deployCCPools ok
+    modifier teleportedFromSepoliaToArbSepolia() {
+        teleport(
+            MODIFIER_TELEPORT_AMOUNT,
+            valentinoRossi,
+            sepoliaFork,
+            arbSepoliaFork,
+            deployedSepoliaPool,
+            sepoliaUnderlying
+        );
+        _;
+    }
+
+    modifier depositedInSepolia() {
+        depositInPool(deployedSepoliaPool, INITIAL_DEPOSIT_LP, sepoliaUnderlying, sepoliaFork, LP_SEP);
+        _;
+    }
 
     function setUp() public {
+        // creating forks
         sepoliaFork = vm.createSelectFork(vm.rpcUrl("sepolia"));
         arbSepoliaFork = vm.createFork(vm.rpcUrl("arbitrumSepolia"));
 
+        // USING CCIPSimulatorFork
         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
         vm.makePersistent(address(ccipLocalSimulatorFork));
         vm.makePersistent(valentinoRossi);
@@ -56,12 +73,6 @@ contract CrossChainProtocolTest is Test {
 
         vm.deal(LP_SEP, 1000 ether);
         sepoliaUnderlying.mint(LP_ARB, INITIAL_MINT_AMOUNT_LP_SEPOLIA);
-
-        // deploy factory on 1st chain (sepolia)
-
-        address routerAddressSepolia = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).routerAddress;
-
-        address feeTokenSepolia = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).linkAddress;
 
         ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
 
@@ -81,15 +92,11 @@ contract CrossChainProtocolTest is Test {
 
         // deploy factory on 2nd chain (arb-sepolia)
 
-        address routerAddressArb = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).routerAddress;
-
-        address feeTokenArb = ccipLocalSimulatorFork.getNetworkDetails(block.chainid).linkAddress;
-
-        vm.startPrank(DEPLOYER);
         ccipLocalSimulatorFork.requestLinkFromFaucet(DEPLOYER, 100e18);
 
         DeployPoolFactory deployPoolFactoryArb = new DeployPoolFactory();
 
+        vm.startPrank(DEPLOYER);
         arbFactory = deployPoolFactoryArb.run();
         vm.stopPrank();
 
@@ -105,7 +112,6 @@ contract CrossChainProtocolTest is Test {
             destinationChainSelector,
             "test"
         );
-
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); // here I'm on arb
         ccipLocalSimulatorFork.switchChainAndRouteMessage(sepoliaFork); // here on sepolia again
 
@@ -113,20 +119,17 @@ contract CrossChainProtocolTest is Test {
 
         vm.selectFork(arbSepoliaFork);
 
-        vm.startPrank(LP_ARB);
-
-        uint256 ccipFees = CrossChainPool(deployedArbSepoliaPool).getCCipFeesForDeposit(INITIAL_DEPOSIT_ARB_LP_SEPOLIA);
-        arbSepoliaUnderlying.approve(deployedArbSepoliaPool, type(uint256).max);
-        CrossChainPool(deployedArbSepoliaPool).deposit{value: ccipFees}(
-            arbSepoliaUnderlying, INITIAL_DEPOSIT_ARB_LP_SEPOLIA
-        );
+        // DEPOSIT ON ARB SEPOLIA
+        depositInPool(deployedArbSepoliaPool, INITIAL_DEPOSIT_LP, arbSepoliaUnderlying, arbSepoliaFork, LP_ARB);
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(sepoliaFork); // here on sepolia
-        (uint256 underlyingAmount,) = CrossChainPool(deployedSepoliaPool).getCrossChainBalances();
-        vm.stopPrank();
-        assertEq(underlyingAmount, INITIAL_DEPOSIT_ARB_LP_SEPOLIA);
+    }
+
+    function testInitialDepositIsOk() public {
         vm.selectFork(sepoliaFork);
-        assertNotEq(sepoliaFactory.getALlDeployedPoolsForChainSelector(destinationChainSelector)[0], address(0));
+        (uint256 underlyingAmount,) = CrossChainPool(deployedSepoliaPool).getCrossChainBalances();
+
+        assertEq(underlyingAmount, INITIAL_DEPOSIT_LP);
     }
 
     function testForkIsOk() public view {
@@ -154,27 +157,16 @@ contract CrossChainProtocolTest is Test {
         assertEq(address(sepoliaUnderlying), arbSepoliaOtherChainToken);
     }
 
-    function testTeleporting() public {
-        uint256 TELEPORT_AMOUNT = 5e18;
-        // user need to deposit ERC20 in sepolia
+    function testTeleporting() public teleportedFromSepoliaToArbSepolia {
         vm.selectFork(sepoliaFork);
+        uint256 buckleAppFees = CrossChainPool(deployedSepoliaPool).calculateBuckleAppFees(MODIFIER_TELEPORT_AMOUNT);
 
-        vm.startPrank(valentinoRossi);
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), TELEPORT_AMOUNT);
-
-        uint256 fee = CrossChainPool(deployedSepoliaPool).getCcipFeesForTeleporting(TELEPORT_AMOUNT, valentinoRossi);
-        CrossChainPool(deployedSepoliaPool).teleport{value: fee}(TELEPORT_AMOUNT, valentinoRossi);
-        assertEq(sepoliaUnderlying.balanceOf(address(deployedSepoliaPool)), TELEPORT_AMOUNT);
-        vm.stopPrank();
-
-        uint256 buckleAppFees = CrossChainPool(deployedSepoliaPool).calculateBuckleAppFees(TELEPORT_AMOUNT);
-
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
-
-        assertEq(arbSepoliaUnderlying.balanceOf(valentinoRossi), TELEPORT_AMOUNT - buckleAppFees);
+        vm.selectFork(arbSepoliaFork);
+        assertEq(arbSepoliaUnderlying.balanceOf(valentinoRossi), MODIFIER_TELEPORT_AMOUNT - buckleAppFees);
     }
 
-    function testCrossChainDeposit() public {
+    /// @notice tests a single deposit without teleport events
+    function testSimpleDeposit() public {
         vm.selectFork(sepoliaFork);
         uint256 deposit_amount = 5e18;
 
@@ -185,13 +177,9 @@ contract CrossChainProtocolTest is Test {
             CrossChainPool(deployedSepoliaPool).calculateLPTinExchangeOfUnderlying(deposit_amount);
 
         uint256 initialPoolBalance = sepoliaUnderlying.balanceOf(deployedSepoliaPool);
+
         // user need to deposit ERC20 in sepolia
-        vm.startPrank(LP_SEP);
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
-
-        uint256 ccipFees = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(deposit_amount);
-
-        CrossChainPool(deployedSepoliaPool).deposit{value: ccipFees}(sepoliaUnderlying, deposit_amount);
+        depositInPool(deployedSepoliaPool, deposit_amount, sepoliaUnderlying, sepoliaFork, LP_SEP);
 
         uint256 finalPoolBalance = sepoliaUnderlying.balanceOf(deployedSepoliaPool);
 
@@ -206,6 +194,7 @@ contract CrossChainProtocolTest is Test {
         vm.stopPrank();
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); //switch to arb
+        vm.selectFork(arbSepoliaFork);
         (uint256 crossChainUnderlyingBalance, uint256 crossChainLiquidityPoolTokens) =
             CrossChainPool(deployedArbSepoliaPool).getCrossChainBalances();
 
@@ -213,18 +202,10 @@ contract CrossChainProtocolTest is Test {
         assertEq(crossChainLiquidityPoolTokens, lptTransferedToLP);
     }
 
-    function testCrossChainDepositAfterTeleport() public {
+    /// @notice tests a depositing after a teleporting
+    function testDepositAfterTeleport() public depositedInSepolia {
         vm.selectFork(sepoliaFork);
-        uint256 deposit_amount = 5e18;
         uint256 teleportAmount = 5e18;
-
-        // user need to deposit ERC20 in sepolia
-        vm.startPrank(LP_SEP);
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
-
-        uint256 ccipFees1 = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(deposit_amount);
-
-        CrossChainPool(deployedSepoliaPool).deposit{value: ccipFees1}(sepoliaUnderlying, deposit_amount);
 
         uint256 lptAmountOfLPSEPBeforeTeleporting = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
         vm.stopPrank();
@@ -233,98 +214,54 @@ contract CrossChainProtocolTest is Test {
 
         vm.selectFork(sepoliaFork);
 
-        // TELEPORTING HERE
-        vm.startPrank(valentinoRossi);
-
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), teleportAmount);
-
-        uint256 ccipFees2 =
-            CrossChainPool(deployedSepoliaPool).getCcipFeesForTeleporting(teleportAmount, valentinoRossi);
-
-        CrossChainPool(deployedSepoliaPool).teleport{value: ccipFees2}(teleportAmount, valentinoRossi);
+        // TELEPORTING FROM SEPOLIA TO ARBITRUM SEPOLIA HERE
+        teleport(teleportAmount, valentinoRossi, sepoliaFork, arbSepoliaFork, deployedSepoliaPool, sepoliaUnderlying);
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); //switch to arb
 
-        // LPT : UDT 1:1
-        // 0.whatever : 1
-        vm.selectFork(sepoliaFork);
         uint256 second_deposit_amount_on_sepolia = 10e18;
-
-        vm.startPrank(LP_SEP);
+        depositInPool(deployedSepoliaPool, second_deposit_amount_on_sepolia, sepoliaUnderlying, sepoliaFork, LP_SEP);
 
         uint256 valueOfOneLptBeforeDeposit = CrossChainPool(deployedSepoliaPool).getValueOfOneLpt();
-
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
-
-        uint256 ccipFees3 = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(second_deposit_amount_on_sepolia);
-
-        CrossChainPool(deployedSepoliaPool).deposit{value: ccipFees3}(
-            sepoliaUnderlying, second_deposit_amount_on_sepolia
-        );
 
         uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
 
         uint256 lastMintedLptForLPSEP = currentLPSEPAmountLpt - lptAmountOfLPSEPBeforeTeleporting;
-        console2.log("lastMintedLptForLPSEP", lastMintedLptForLPSEP);
-        console2.log(
-            "second_deposit_amount_on_sepolia / valueOfOneLptBeforeDeposit",
-            ((second_deposit_amount_on_sepolia * 1e18) / valueOfOneLptBeforeDeposit)
-        );
-        // 9987510000000000000
-        // 9987515600000000000
-        console2.log("second_deposit_amount_on_sepolia", second_deposit_amount_on_sepolia);
 
         assertEq(lastMintedLptForLPSEP, ((second_deposit_amount_on_sepolia * 1e18) / valueOfOneLptBeforeDeposit));
         assertLt(lastMintedLptForLPSEP, second_deposit_amount_on_sepolia);
     }
 
-    function testCrossChainRedeemAfterTeleport() public {
+    function testRedeemAfterTeleport() public {
         vm.selectFork(sepoliaFork);
-        uint256 deposit_amount = 5e18;
+        uint256 teleportAmount = 5e18;
 
-        // LP need to deposit ERC20 in sepolia
-        vm.startPrank(LP_SEP);
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
-
-        uint256 ccipFees1 = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(deposit_amount);
-
-        CrossChainPool(deployedSepoliaPool).deposit{value: ccipFees1}(sepoliaUnderlying, deposit_amount);
+        uint256 lptAmountOfLPSEPBeforeTeleporting = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
         vm.stopPrank();
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
 
         vm.selectFork(sepoliaFork);
 
-        // TELEPORTING HERE
-        vm.startPrank(valentinoRossi);
-
-        uint256 teleportAmount = 1e18;
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), teleportAmount);
-
-        uint256 ccipFees2 =
-            CrossChainPool(deployedSepoliaPool).getCcipFeesForTeleporting(teleportAmount, valentinoRossi);
-
-        CrossChainPool(deployedSepoliaPool).teleport{value: ccipFees2}(teleportAmount, valentinoRossi);
+        // TELEPORTING FROM SEPOLIA TO ARBITRUM SEPOLIA HERE
+        teleport(teleportAmount, valentinoRossi, sepoliaFork, arbSepoliaFork, deployedSepoliaPool, sepoliaUnderlying);
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); //switch to arb
 
-        // LPT : UDT 1:1
-        // 0.whatever : 1
-        vm.selectFork(sepoliaFork);
         uint256 second_deposit_amount_on_sepolia = 10e18;
+        depositInPool(deployedSepoliaPool, second_deposit_amount_on_sepolia, sepoliaUnderlying, sepoliaFork, LP_SEP);
 
-        vm.startPrank(LP_SEP);
+        uint256 valueOfOneLptBeforeDeposit = CrossChainPool(deployedSepoliaPool).getValueOfOneLpt();
 
-        sepoliaUnderlying.approve(address(deployedSepoliaPool), type(uint256).max);
+        uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
+        uint256 userUnderlyingBalanceBeforeRedeemal = sepoliaUnderlying.balanceOf(LP_SEP);
 
-        uint256 ccipFees3 = CrossChainPool(deployedSepoliaPool).getCCipFeesForDeposit(second_deposit_amount_on_sepolia);
+        uint256 lastMintedLptForLPSEP = currentLPSEPAmountLpt - lptAmountOfLPSEPBeforeTeleporting;
 
-        CrossChainPool(deployedSepoliaPool).deposit{value: ccipFees3}(
-            sepoliaUnderlying, second_deposit_amount_on_sepolia
-        );
+        assertEq(lastMintedLptForLPSEP, ((second_deposit_amount_on_sepolia * 1e18) / valueOfOneLptBeforeDeposit));
+        assertLt(lastMintedLptForLPSEP, second_deposit_amount_on_sepolia);
 
         //// start testing the redeemal
-        uint256 currentLPSEPAmountLpt = CrossChainPool(deployedSepoliaPool).balanceOf(LP_SEP);
 
         (uint256 redeemCurrentChain, uint256 redeemCrossChain) =
             CrossChainPool(deployedSepoliaPool).calculateAmountToRedeem(currentLPSEPAmountLpt);
@@ -333,21 +270,70 @@ contract CrossChainProtocolTest is Test {
 
         uint256 totalRedeem = CrossChainPool(deployedSepoliaPool).getRedeemValueForLP(currentLPSEPAmountLpt);
 
-        // assertEq(totalRedeem / 1e10, (redeemCurrentChain + redeemCrossChain) / 1e10); // it should definitelly be more precise, todo look into it
-        // (totalRedeem / 1e2) =150012499999999999
         assertEq((totalRedeem / 1e2), (redeemCurrentChain + redeemCrossChain) / 1e2); // taking off the last decimals
 
-        uint256 ccipFeesRedeem = CrossChainPool(deployedSepoliaPool).getCCipFeesForRedeem(currentLPSEPAmountLpt, LP_SEP);
+        // cooldown and redeem
+        cooldownAndRedeem(LP_SEP, sepoliaFork, deployedSepoliaPool, currentLPSEPAmountLpt);
 
-        // CrossChainPool(deployedSepoliaPool).deposit{value: ccipFeesRedeem}(
-        //     sepoliaUnderlying, second_deposit_amount_on_sepolia
-        // );
-        CrossChainPool(deployedSepoliaPool).redeem{value: ccipFeesRedeem}(currentLPSEPAmountLpt, LP_SEP);
+        uint256 userUnderlyingBalanceAfterRedeemal = sepoliaUnderlying.balanceOf(LP_SEP);
 
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); //
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork);
-        //
+        // making sure the lp get the correct amount back on the current chain
+        assertEq(
+            (userUnderlyingBalanceAfterRedeemal / 1e4), (userUnderlyingBalanceBeforeRedeemal + redeemCurrentChain) / 1e4
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       HELPERS FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function depositInPool(
+        address poolAddress,
+        uint256 depositAmount,
+        ERC20Mock underlying,
+        uint256 fromFork,
+        address user
+    ) public {
+        vm.selectFork(fromFork);
+        vm.startPrank(user);
+        uint256 ccipFees = CrossChainPool(poolAddress).getCCipFeesForDeposit(depositAmount);
+        underlying.approve(poolAddress, type(uint256).max);
+        CrossChainPool(poolAddress).deposit{value: ccipFees}(underlying, depositAmount);
+        vm.stopPrank();
+    }
+
+    function teleport(
+        uint256 amountToTeleport,
+        address user,
+        uint256 fromFork,
+        uint256 toFork,
+        address fromPool,
+        ERC20Mock fromUnderlying
+    ) public {
+        vm.selectFork(fromFork);
+
+        vm.startPrank(user);
+        fromUnderlying.approve(address(fromPool), amountToTeleport);
+
+        uint256 fee = CrossChainPool(fromPool).getCcipFeesForTeleporting(amountToTeleport, user);
+        CrossChainPool(fromPool).teleport{value: fee}(amountToTeleport, user);
+        vm.stopPrank();
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(toFork);
+    }
+
+    function cooldownAndRedeem(address user, uint256 fromFork, address fromPool, uint256 currentLPSEPAmountLpt)
+        public
+    {
+        vm.selectFork(fromFork);
+        vm.startPrank(user);
+        uint256 ccipFeesRedeem = CrossChainPool(fromPool).getCCipFeesForRedeem(currentLPSEPAmountLpt, user);
+        uint256 ccipFeesCooldown = CrossChainPool(fromPool).getCCipFeesForCooldown(currentLPSEPAmountLpt);
+
+        CrossChainPool(fromPool).setCooldownForLp{value: ccipFeesCooldown}(currentLPSEPAmountLpt);
+
+        vm.warp(block.timestamp + 60 * 60 * 24);
+
+        CrossChainPool(fromPool).redeem{value: ccipFeesRedeem}(currentLPSEPAmountLpt, user);
+        vm.stopPrank();
     }
 }

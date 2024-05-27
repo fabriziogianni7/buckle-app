@@ -26,3 +26,280 @@ name of deployer account: nota
 Pool factory deployed!!!!!
 address in arb: 0x8F44aFD0e319aBcEdaee0599Ad7a9c0C4f4A7Fd8
 address in sepoilia: 0x30C07770a7F5576B2c36D38d8D145762867432EA
+
+
+
+need to send link automatically at deployment
+
+
+factories:
+
+sepolia:  0x20631A59bF9bf732AF71Fee3fB885ACBcc6efc06
+arbitrum: 0xde68559ac1a9085FAAfa3831d8Be031Eaa9F8AdD
+
+need to deploy pools;
+make a list of pools;
+every pool should have the address of the other pool in other chain
+
+make the deposit functionality
+make the teleport functionality
+
+in factory, need to make a mapping pool -> tokens,tokend
+
+
+Mission:
+list pools on frontend
+
+Current situation
+_deployPool emit an event PoolCreated(address) with the pool address
+s_deployedPools has mapping chain selector --> pools
+
+maybe adding a parameter in the PoolCreated with token can be a solution I can also put token here and there
+
+that would be ok for deposit
+
+for teleport I need to select a destination netowrk and token
+
+I can retrieve the events of the factory for the token I'm looking for. can use s_crossChainPool on the pool
+
+- deploy 2 pool factories
+- send them link (already in script)
+- call run in DeployPoolFromFactory
+
+
+@forge script script/DeployPoolFactory.s.sol --fork-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e casca
+
+
+
+
+cast wallet import arbDeployer --interactive
+///// forked sepolia experiment
+anvil --fork-url $ARBITRUM_SEPOLIA_RPC_URL --port 8546
+
+sepolia factory: 0x40ed5256EC8E69D2E9bc4781c27e5b833589Dc0f 
+arbitrum factory: 0xecA742215f77db3723056d1cAD9F09D06F37F129 
+
+trying to create a pool from sepolia
+
+        address factoryAddress --> 0x40ed5256EC8E69D2E9bc4781c27e5b833589Dc0f
+        address _receiverFactory ---> 0xecA742215f77db3723056d1cAD9F09D06F37F129
+        address _underlyingTokenOnSourceChain ---> 0x3308ff248A0Aa6EB7499A39C4c26ADF526825B0d (GHO on sepolia)
+        address _underlyingTokenOnDestinationChain ---> 0xDbb077Ddec08E8b574186098359d30556AF6797D (KEY on arb sepolia)
+        uint64 _destinationChainSelector, --> 3478487238524512106 (arb sepolia)
+        string _poolName "test"
+
+forge script script/DeployPoolFromFactory.s.sol  --rpc-url 127.0.0.1:8545 --broadcast --account arbDeployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint64,string)" 0x40ed5256EC8E69D2E9bc4781c27e5b833589Dc0f 0xecA742215f77db3723056d1cAD9F09D06F37F129 0x3308ff248A0Aa6EB7499A39C4c26ADF526825B0d 0xDbb077Ddec08E8b574186098359d30556AF6797D 3478487238524512106 "test" 
+
+
+forge script script/DeployPoolFromFactory.s.sol --sig "logger(uint256 number)" 1 --rpc-url 127.0.0.1:8545 --broadcast --account arbDeployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv 
+
+
+
+deployed pool on sepolia is 0x94E65a9f65B9dC2bB3871113Cb2BD2f84bab433b
+
+
+I sent more link to the factories src/CrossChainPool.sol 
+
+
+forge verify-contract  
+
+forge verify-contract --etherscan-api-key $ETHERSCAN_API_KEY 0x94E65a9f65B9dC2bB3871113Cb2BD2f84bab433b src/CrossChainPool.sol:CrossChainPool 
+
+ * forge script script/RedeemLink.s.sol:RedeemLink  --rpc-url $FUJI_C_RPC_URL --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "redeem(address)" 0x6954D9e3DB092BCE5B10cAf4ab78aE8d538ff38a
+
+
+latest factories
+
+sepolia: 0x04722a980f2F48696446A3F3017520dCbe8527Cc
+blocksepolia: 	5913915
+arbSepolia: 0x26bBdCc59D8c9d5f269635A1C13208d6DeE6d98e
+blockarb: 44617940
+fuji: 0x6954D9e3DB092BCE5B10cAf4ab78aE8d538ff38a
+block: 33056328
+
+sepolia-arb
+pool on sepolia 0xeC4Ce2Ac23a8EB3F4000d02a049b6e68857Ae7C6
+pool on arbitrum 
+
+arb-fuji
+pool on arbitrum: 0x7Ea5dAedcf166fd1A000215122efA2f377516946
+pool on fuji: 0x01f24a91DefDb26a99b2F7dBf6de5671EF20e76B
+
+LINK to LINK
+
+
+
+
+
+
+
+//verify on fuji (didnt work)
+forge verify-contract 0x6954D9e3DB092BCE5B10cAf4ab78aE8d538ff38a src/PoolFactory.sol:PoolFactory --verifier-url 'https://api.routescan.io/v2/network/testnet/evm/43113/etherscan' --etherscan-api-key verifyContract --num-of-optimizations 200 --compiler-version v0.8.25+commit.b61c2a91 --constructor-args $(cast abi-encode "constructor(address _ccipRouter, address _feeToken)" 0xF694E193200268f9a4868e4Aa017A0118C9a8177 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846) --skip-is-verified-check --watch
+
+
+forge verify-contract 0x26bBdCc59D8c9d5f269635A1C13208d6DeE6d98e src/PoolFactory.sol:PoolFactory --verifier-url 'https://api-sepolia.arbiscan.io/api' --etherscan-api-key $ARBISCAN_API_KEY --num-of-optimizations 200 --compiler-version v0.8.25+commit.b61c2a91 --constructor-args $(cast abi-encode "constructor(address _ccipRouter, address _feeToken)" 0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E) --skip-is-verified-check --watch
+
+
+
+
+
+
+
+
+
+
+feee for initiallyu deploying pool 
+16015286601757825753
+4988546505833703840
+
+
+total gas spent, FUNCTION_ID 2495756 1 --> this was for deploy crosschain and the previous was pretty accurate
+total gas spent, FUNCTION_ID 2495756 1
+
+total gas spent, FUNCTION_ID 207625 2 --> this is for confirming the deployment and was too much
+total gas spent, FUNCTION_ID 207625 2
+
+function id 2
+16_015286601_757825753
+ 4_988546505_833703840
+ 1_309974111_328353696
+
+
+
+ crosschainpoool gas
+TELEPORT_FUNCTION_ID = 1;
+DEPOSIT_FUNCTION_ID = 2;
+
+  total gas spent, FUNCTION_ID 2_536_245 1
+  total gas spent, FUNCTION_ID 70_635 1
+
+
+  total gas spent, FUNCTION_ID 207_625 2
+  total gas spent, FUNCTION_ID 68_113 2
+
+
+
+
+latest contracts:
+
+factories:
+arb-sepolia:
+0xa460Ec0F081f5F89F0420f2cb9A93760537ef7A5
+block: 45047743
+fuji:
+0x54cCEe7e1eE9Aab153Da18b447a50D8282e1506F
+block: 33069552
+sepolia:
+0x78f2aA2F6A8B92a0539bA56dDEcfFc0c18e4fEBD
+
+
+
+
+all view methods from crosschain pool contract// methods:
+    // calculateLPTinExchangeOfUnderlying(uint256 _amountOfUnderlyingToDeposit)
+    // calculateAmountToRedeem(uint256 _lptAmount)
+    // calculateBuckleAppFees(uint256 _value)
+    // getCcipFeesForTeleporting(uint256 _value, address _to) 
+    // getCCipFeesForDeposit(uint256 _value)
+    // function getCCipFeesForRedeem(uint256 _lptAmount, address _to)
+    // getUnderlyingToken()
+    // getCrossChainSenderAndSelector()
+    // getOtherChainUnderlyingToken()
+    // getCrossChainBalances()
+    // getTotalProtocolBalances()
+    // getValueOfOneLpt()
+    // getRedeemValueForLP(uint256 _lptAmount)
+    // getGasLimitValues()
+
+
+
+
+Things to change/ add in smart contracts
+
+- add a cooldown period for redeemal OK 
+- lower the redeem gaslimit OK
+- LPT should have a better name OK
+
+- add cross chain selector in events deposit and teleport OK
+- add from in teleport event  OK
+- add underlying token in events OK
+
+
+SOME POINTS TO GO OVER
+- what happens during edge cases? bridging more money than available in a pool? OK
+- is there any rebalancing? OK
+- what is the invariant of the protocol? OK 
+
+PLAN:
+- review OK
+  - need to remove the lp from crosschain balance TODO!!!
+- finalize FE
+- deploy pools on sepolia, arb sepolia, fuji, polygon amoy
+- ship FE on spheron
+- iterate over testing
+- need to test the invariants
+- ship again....
+- nedd to make a demo video and prepare the submission for block magic
+
+
+REVIEW:
+- clean up and adding view functions as well as setters
+  - add getMaxTeleportAmount
+- adding necessary natspec where needed OK
+- review storage layout OK
+- check that all the functions follow cex pattern
+- change the way the pools are deployed feom the factories  - (not doing that)
+
+
+
+
+
+
+
+
+
+// OLD RECEIVE FUNCTION
+
+
+/// see CCIPReceiver.sol
+    // todo add events for each functionID
+    // function _ccipReceiveDeprecated(Client.Any2EVMMessage memory any2EvmMessage) internal override {
+    //     // uint256 startGas = gasleft();
+    //     s_lastReceivedMessageId = any2EvmMessage.messageId;
+
+    //     (
+    //         uint8 functionID,
+    //         uint256 valueOrUnderlyingDepositedAmountOrAmountToRedeem,
+    //         uint256 feesOrLiquidityTokensMintedOrRedeemedAmount,
+    //         address to
+    //     ) = abi.decode(any2EvmMessage.data, (uint8, uint256, uint256, address));
+
+    //     if (functionID == TELEPORT_FUNCTION_ID) {
+    //         // add
+    //         s_crossChainUnderlyingBalance += valueOrUnderlyingDepositedAmountOrAmountToRedeem; //should be + fees
+    //         i_underlyingToken.safeTransfer(
+    //             to, valueOrUnderlyingDepositedAmountOrAmountToRedeem - feesOrLiquidityTokensMintedOrRedeemedAmount
+    //         ); //todo review this
+    //     }
+    //     if (functionID == DEPOSIT_FUNCTION_ID) {
+    //         // adding these values to the balance of the other crosschainPool
+    //         s_crossChainUnderlyingBalance += valueOrUnderlyingDepositedAmountOrAmountToRedeem;
+    //         s_crossChainLiquidityPoolTokens += feesOrLiquidityTokensMintedOrRedeemedAmount;
+    //     }
+    //     if (functionID == REDEEM_FUNCTION_ID) {
+    //         // NOT subtracting amount redeemed on the source chain from s_crossChainUnderlyingBalance bc I did it already at cooldown
+
+    //         // send underlying to to address
+    //         i_underlyingToken.safeTransfer(to, valueOrUnderlyingDepositedAmountOrAmountToRedeem);
+    //         emit RedeemedCrossChain(
+    //             to, valueOrUnderlyingDepositedAmountOrAmountToRedeem, block.chainid, any2EvmMessage.messageId
+    //         );
+    //     }
+    //     if (functionID == COOLDOWN_FUNCTION_ID) {
+    //         s_crossChainUnderlyingBalance -= feesOrLiquidityTokensMintedOrRedeemedAmount;
+    //     }
+    //     emit MessageReceived(any2EvmMessage.messageId);
+    //     // uint256 endGas = gasleft();
+    //     // uint256 totalSpent = startGas - endGas;
+    //     // console2.log("total gas spent, pool, FUNCTION_ID, chainid", totalSpent, functionID, block.chainid);
+    // }

@@ -180,7 +180,7 @@ contract PoolFactory is Ownable, CCIPReceiver {
             tokenAmounts: new Client.EVMTokenAmount[](0), // we are not passing tokens even tho we bridge bc we cool AF
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 2_800_000})
+                Client.EVMExtraArgsV1({gasLimit: 3_000_000})
             ),
             feeToken: i_feeToken // the token this contract will pay with
         });

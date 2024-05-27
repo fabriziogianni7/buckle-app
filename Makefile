@@ -90,3 +90,13 @@ verify-factory-arb:
 verify-factory-sepolia:
 	forge verify-contract 0x78f2aA2F6A8B92a0539bA56dDEcfFc0c18e4fEBD src/PoolFactory.sol:PoolFactory --verifier-url 'https://api-sepolia.etherscan.io/api' --etherscan-api-key $ETHERSCAN_API_KEY --num-of-optimizations 200 --compiler-version v0.8.25+commit.b61c2a91 --constructor-args $(cast abi-encode "constructor(address _ccipRouter, address _feeToken)" 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59 0x779877A7B0D9E8603169DdbD7836e478b4624789) --skip-is-verified-check --watch
 
+
+
+#  make print-heading HEADING="PUBLIC FUNCTIONS"
+print-heading:
+	@heading="$(HEADING)"; \
+	printf "/*//////////////////////////////////////////////////////////////\n"; \
+	printf "                       %s\n" "$$heading"; \
+	printf "//////////////////////////////////////////////////////////////*/\n"
+
+
