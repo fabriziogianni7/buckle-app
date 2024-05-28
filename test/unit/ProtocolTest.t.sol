@@ -5,7 +5,7 @@ pragma solidity ^0.8.25; // up to
             this file test the protocol interactions
 //////////////////////////////////////////////////////////////*/
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test, Vm, console2} from "forge-std/Test.sol";
 import {Register} from "../helpers/Register.sol";
 import {PoolFactory} from "../../src/PoolFactory.sol";
 import {DeployPoolFactory} from "../../script/deploy/DeployPoolFactory.s.sol";
@@ -109,18 +109,25 @@ contract ProtocolTest is Test {
         vm.selectFork(sepoliaFork);
         // deploying the pools
         uint64 destinationChainSelector = 3478487238524512106;
+        uint64 destinationChainId = 421614;
 
-        deployedSepoliaPool = sepoliaFactory.deployCCPools(
-            address(arbFactory),
-            address(sepoliaUnderlying),
-            address(arbSepoliaUnderlying),
-            destinationChainSelector,
-            "test"
+        deployedSepoliaPool = sepoliaFactory.deployCCPoolsCreate2(
+            address(arbFactory), address(sepoliaUnderlying), address(arbSepoliaUnderlying), destinationChainId, "test"
         );
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); // here I'm on arb
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(sepoliaFork); // here on sepolia again
 
+        (address poolDest, uint64 selector) = CrossChainPool(deployedSepoliaPool).getCrossChainSenderAndSelector();
+        console2.log("deployed on sepolia", deployedSepoliaPool);
+        console2.log("sender set on sepolia", poolDest);
+        console2.log("selector set on sepolia", selector);
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbSepoliaFork); // here I'm on arb
+        address[] memory listOfPools = arbFactory.getDeployedPoolsInCurrenChain();
+
+        console2.log("factory deployed address", listOfPools[0]);
+
+        vm.selectFork(sepoliaFork);
         deployedArbSepoliaPool = sepoliaFactory.getALlDeployedPoolsForChainSelector(destinationChainSelector)[0];
+        console2.log("deployedArbSepoliaPool", deployedArbSepoliaPool);
 
         vm.selectFork(arbSepoliaFork);
 
@@ -292,7 +299,7 @@ contract ProtocolTest is Test {
         //making sure the lp get the correct amount back on the current chain
         assertEq(userUnderlyingBalanceAfterRedeemal, userUnderlyingBalanceBeforeRedeemal + redeemCurrentChain);
 
-        //making sure the lp get the redeem amount back on the other chain
+        //making sure the lp get the redeem amount back on the destination chain
         vm.selectFork(arbSepoliaFork);
 
         assertLt(LpBalanceBeforeRedeem, LpBalanceBeforeRedeem + redeemCrossChain);

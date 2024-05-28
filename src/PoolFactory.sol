@@ -23,9 +23,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// import {Test, console2} from "forge-std/Test.sol";
+import {console2} from "forge-std/Test.sol";
 
 import {CrossChainPool} from "./CrossChainPool.sol";
+import {Register} from "./Register.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
@@ -41,7 +42,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  *  deployer need to sen feetoken to this contract beforehand
  */
 
-contract PoolFactory is Ownable, CCIPReceiver {
+contract PoolFactory is Ownable, CCIPReceiver, Register {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -62,7 +63,9 @@ contract PoolFactory is Ownable, CCIPReceiver {
     address private immutable i_feeToken;
     uint64 private constant DEPLOY_POOL_FUNCTION_ID = 1;
     uint64 private constant SUCCESS_DEPLOY_FUNCTION_ID = 2;
+    uint64 private immutable i_chainSelectorCurrentChain;
     mapping(uint64 => address[]) private s_deployedPools; //  maps chain selector to pool array
+    address[] private s_allDeployedPoolsInCurrentChain; //  maps chain selector to pool array
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -81,8 +84,12 @@ contract PoolFactory is Ownable, CCIPReceiver {
                                  FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _ccipRouter, address _feeToken) CCIPReceiver(_ccipRouter) Ownable(msg.sender) {
+    constructor(address _ccipRouter, address _feeToken, uint64 _chainSelector)
+        CCIPReceiver(_ccipRouter)
+        Ownable(msg.sender)
+    {
         i_feeToken = _feeToken;
+        i_chainSelectorCurrentChain = _chainSelector;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -90,36 +97,47 @@ contract PoolFactory is Ownable, CCIPReceiver {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice start the crosschain deployment flow
-     * it is called by the owner that want to deploy new pool pairs
-     * the user should:
-     *     1. select 2 networks
-     * the contract should:
-     *     1. deploy pool on current network
-     *     2. send ccip message to factory on other networks
-     *      on the destination network, it should be deployed the correspondent pool
+     * @notice start the crosschain deployment flow. deploy pools using ccip and create2
      *  @param _receiverFactory the address of the receiver factory
      *  @param _underlyingTokenOnSourceChain the underlying ERC20 token on current network
      *  @param _underlyingTokenOnDestinationChain the underlying ERC20 token on destination network
-     *  @param _destinationChainSelector the chain selector from ccip of the destination network
+     *  @param _destinationChainId the destination chain id
      *  @param _poolName name of pool
      */
-    function deployCCPools(
+    function deployCCPoolsCreate2(
         address _receiverFactory,
         address _underlyingTokenOnSourceChain,
         address _underlyingTokenOnDestinationChain,
-        uint64 _destinationChainSelector,
+        uint256 _destinationChainId,
         string memory _poolName
     ) external returns (address) {
-        (address deployedPool, bool success) = _deployPool(
-            _underlyingTokenOnSourceChain, _poolName, _destinationChainSelector, _underlyingTokenOnDestinationChain
+        NetworkDetails memory destinationConfig = s_networkDetails[_destinationChainId];
+
+        address deployedPool = _deployPoolCreate2(
+            _underlyingTokenOnSourceChain,
+            _poolName,
+            destinationConfig.chainSelector,
+            _underlyingTokenOnDestinationChain,
+            1
         );
-        if (!success) {
-            revert PoolFactory__PoolDeploymentFailed();
-        }
+
+        // compute destination chain pooladdress and set it here as a sender
+        address computedAddress = _computeAddress(
+            1,
+            _underlyingTokenOnDestinationChain,
+            _poolName,
+            i_chainSelectorCurrentChain,
+            destinationConfig.routerAddress,
+            _underlyingTokenOnSourceChain
+        );
+
+        CrossChainPool(deployedPool).addCrossChainSender(computedAddress);
+
+        s_deployedPools[destinationConfig.chainSelector].push(computedAddress);
+
         _sendCCipMessageDeploy(
             _receiverFactory,
-            _destinationChainSelector,
+            destinationConfig.chainSelector,
             _underlyingTokenOnDestinationChain,
             _poolName,
             deployedPool,
@@ -151,35 +169,67 @@ contract PoolFactory is Ownable, CCIPReceiver {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice deploy pool on the current chain
+     * @notice deploy pool on the current chain using create2
      */
-    function _deployPool(
+    function _deployPoolCreate2(
         address _underlyingToken,
         string memory _name,
         uint64 _crossChainSelector,
-        address _underlyingTokenOnDestinationChain
-    ) internal returns (address poolAddress, bool success) {
-        // todo make necessary checks
+        address _underlyingTokenOnDestinationChain,
+        uint256 _salt
+    ) internal returns (address poolAddress) {
         address router = getRouter();
-        CrossChainPool pool =
-            new CrossChainPool(_underlyingToken, _name, _crossChainSelector, router, _underlyingTokenOnDestinationChain);
-        poolAddress = address(pool);
-        if (poolAddress == address(0)) {
-            success = false;
-        } else {
-            success = true;
+        // uint256 salt = 1; //todo use vrf for that
+        bytes memory bytecode = type(CrossChainPool).creationCode;
+        bytes memory encodedByteCodeAndParams = abi.encodePacked(
+            bytecode,
+            abi.encode(_underlyingToken, _name, _crossChainSelector, router, _underlyingTokenOnDestinationChain)
+        );
+
+        assembly {
+            poolAddress := create2(0, add(encodedByteCodeAndParams, 0x20), mload(encodedByteCodeAndParams), _salt)
+            if iszero(extcodesize(poolAddress)) { revert(0, 0) }
         }
 
         emit PoolCreated(poolAddress, _underlyingToken, _underlyingTokenOnDestinationChain, _crossChainSelector);
-        return (poolAddress, success);
+        s_allDeployedPoolsInCurrentChain.push(poolAddress);
+        return poolAddress;
+    }
+
+    /**
+     * @notice compute the address of the pool that will be deployed on destination chain
+     */
+    function _computeAddress(
+        uint256 _salt,
+        address _underlyingToken,
+        string memory _name,
+        uint64 _crossChainSelector,
+        address _destinationRouterAddress,
+        address _underlyingTokenOnDestinationChain
+    ) internal view returns (address) {
+        bytes memory bytecode = type(CrossChainPool).creationCode;
+        bytes memory encodedByteCodeAndParams = abi.encodePacked(
+            bytecode,
+            abi.encode(
+                _underlyingToken,
+                _name,
+                _crossChainSelector,
+                _destinationRouterAddress,
+                _underlyingTokenOnDestinationChain
+            )
+        );
+
+        bytes32 bytecodeHash = keccak256(encodedByteCodeAndParams);
+
+        return address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), _salt, bytecodeHash)))));
     }
 
     /**
      * @notice send a message crosschain to another factory to deploy a pool contract
      * @notice deployer should send fee token to this contract
-     * @param _receiver the other factory on the other chain
+     * @param _receiver the other factory on the destination chain
      * @param _destinationChainSelector the destination chain chainlink selector id
-     * @param _underlyingOnOtherChain the address of the underlying token on the other chain
+     * @param _underlyingOnOtherChain the address of the underlying token on the destination chain
      * @param _name name of pool
      * @param _deployedPoolAddress the deployed pool to add as a allowed sender
      * @param _underlyingTokenOnSourceChain the address of the underlying token on the current chain
@@ -215,39 +265,6 @@ contract PoolFactory is Ownable, CCIPReceiver {
     }
 
     /**
-     * @notice send back a message to source chain when the deployment is successful
-     * @param _receiver the factory from the source chain
-     * @param _destinationChainSelector the ccip selector of the chain to send the message
-     * @param _deployedPoolAddress the pool address which was deployed
-     * @param _deployedPoolOnOtherChain the pool address which was deployed on the other chain
-     */
-    function _sendCCipMessageDeploySuccess(
-        address _receiver,
-        uint64 _destinationChainSelector,
-        address _deployedPoolAddress,
-        address _deployedPoolOnOtherChain
-    ) internal {
-        address router = getRouter(); // it is the chainlink router for the current network
-
-        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(_receiver),
-            data: abi.encode(SUCCESS_DEPLOY_FUNCTION_ID, _deployedPoolAddress, "", _deployedPoolOnOtherChain, address(0)),
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                // Additional arguments, setting gas limit
-                Client.EVMExtraArgsV1({gasLimit: 400_000})
-            ),
-            feeToken: i_feeToken
-        });
-
-        uint256 fee = IRouterClient(router).getFee(_destinationChainSelector, message);
-
-        IERC20(i_feeToken).approve(address(router), fee);
-
-        s_lastSentMessageId = IRouterClient(router).ccipSend(_destinationChainSelector, message);
-    }
-
-    /**
      * @notice inherits form ccipReceiver and allow the contract to receive messages from other factories
      *  @notice it should deploy a new pool in the network where this contract is received
      *  should be ready to accept  3 type of msgs:
@@ -264,41 +281,24 @@ contract PoolFactory is Ownable, CCIPReceiver {
 
         // those are the parameters
         s_lastReceivedData = any2EvmMessage.data;
-
         (
             uint64 functionID,
-            address underlyingTokenOrDeployedAddress,
+            address underlyingOnCurrentChain,
             string memory poolName,
-            address peerDeployedPool,
+            address deployedPoolOnOtherChain,
             address underlyingTokenOnOtherChain
         ) = abi.decode(any2EvmMessage.data, (uint64, address, string, address, address));
 
         if (functionID == DEPLOY_POOL_FUNCTION_ID) {
-            (address deployedPool, bool success) = _deployPool(
-                underlyingTokenOrDeployedAddress,
+            address deployedPool = _deployPoolCreate2(
+                underlyingOnCurrentChain,
                 poolName,
-                any2EvmMessage.sourceChainSelector,
-                underlyingTokenOnOtherChain
+                any2EvmMessage.sourceChainSelector, // the selector of the chain the msg comes from
+                underlyingTokenOnOtherChain,
+                1
             );
-            if (success) {
-                // add the allowed sender -deployedPoolOnOtherChain- to the pool
-                CrossChainPool(deployedPool).addCrossChainSender(peerDeployedPool);
-                _sendCCipMessageDeploySuccess(
-                    abi.decode(any2EvmMessage.sender, (address)),
-                    any2EvmMessage.sourceChainSelector,
-                    deployedPool, // current chain
-                    peerDeployedPool // source chain
-                );
-            } else {
-                revert PoolFactory__PoolDeploymentFailed();
-            }
-        }
-
-        if (functionID == SUCCESS_DEPLOY_FUNCTION_ID) {
-            s_deployedPools[any2EvmMessage.sourceChainSelector].push(underlyingTokenOrDeployedAddress);
-
-            // in this function peerDeployedPool is actually the deployed pool in the current network
-            CrossChainPool(peerDeployedPool).addCrossChainSender(underlyingTokenOrDeployedAddress);
+            CrossChainPool(deployedPool).addCrossChainSender(deployedPoolOnOtherChain);
+            s_deployedPools[any2EvmMessage.sourceChainSelector].push(deployedPoolOnOtherChain);
         }
 
         emit MessageReceived(any2EvmMessage.messageId);
@@ -344,5 +344,9 @@ contract PoolFactory is Ownable, CCIPReceiver {
      */
     function getALlDeployedPoolsForChainSelector(uint64 _chainSelector) external view returns (address[] memory) {
         return s_deployedPools[_chainSelector];
+    }
+
+    function getDeployedPoolsInCurrenChain() external view returns (address[] memory) {
+        return s_allDeployedPoolsInCurrentChain;
     }
 }

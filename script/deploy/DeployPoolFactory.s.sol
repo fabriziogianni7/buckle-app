@@ -24,7 +24,8 @@ contract DeployPoolFactory is Script {
         setUp();
         vm.stopPrank();
         vm.startBroadcast(msg.sender);
-        PoolFactory poolFactory = new PoolFactory(activeConfig.routerAddress, activeConfig.linkAddress);
+        PoolFactory poolFactory =
+            new PoolFactory(activeConfig.routerAddress, activeConfig.linkAddress, activeConfig.chainSelector);
 
         IERC20(activeConfig.linkAddress).approve(address(poolFactory), FEE_TOKEN_DEPOSIT_AMOUNT);
         poolFactory.depositFeeToken(FEE_TOKEN_DEPOSIT_AMOUNT);

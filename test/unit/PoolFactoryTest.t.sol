@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
         this file is for unit tests on PoolFactory.sol
 //////////////////////////////////////////////////////////////*/
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 import {PoolFactory} from "../../src/PoolFactory.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
@@ -51,14 +51,66 @@ contract PoolFactoryTest is Test {
         assertEq(ccipRouter, activeConfig.routerAddress);
     }
 
-    // cant be tested as it is bc _ccipReceive is internal skip for now
-    // function testGetALlDeployedPoolsForChainSelector() public {
-    //     uint64 mockChainSelector = 123;
+    function testDeployPoolCreate2() public {
+        TestPoolFactory testPoolFactory =
+            new TestPoolFactory(activeConfig.routerAddress, activeConfig.linkAddress, activeConfig.chainSelector);
 
-    //     poolFactorySourceChain.deployCCPools(address(1), address(2), address(3), mockChainSelector, "test");
+        address _underlyingToken = address(123);
+        string memory _name = "create2test";
+        uint64 _crossChainSelector = 1;
+        address _underlyingTokenOnDestinationChain = address(123);
+        address _destinationRouterAddress = 0x20067a7558168e12ad53b235F2f7408FeEa4985F;
+        uint256 _salt = 1;
 
-    //     address[] memory list = poolFactorySourceChain.getALlDeployedPoolsForChainSelector(mockChainSelector);
+        address deployedPoolCreate2 = testPoolFactory.deployPoolCreate2(
+            _underlyingToken, _name, _crossChainSelector, _underlyingTokenOnDestinationChain, _salt
+        );
 
-    //     assertGt(list.length, 0);
-    // }
+        address computedAddress = testPoolFactory.computeAddress(
+            _salt,
+            _underlyingToken,
+            _name,
+            _crossChainSelector,
+            _underlyingTokenOnDestinationChain,
+            _destinationRouterAddress
+        );
+
+        assertEq(deployedPoolCreate2, computedAddress);
+    }
+}
+
+// test contract for the create2 functions / internal function
+contract TestPoolFactory is PoolFactory {
+    constructor(address _ccipRouter, address _feeToken, uint64 _selector)
+        PoolFactory(_ccipRouter, _feeToken, _selector)
+    {}
+
+    function deployPoolCreate2(
+        address _underlyingToken,
+        string memory _name,
+        uint64 _crossChainSelector,
+        address _underlyingTokenOnDestinationChain,
+        uint256 _salt
+    ) public returns (address) {
+        return
+            _deployPoolCreate2(_underlyingToken, _name, _crossChainSelector, _underlyingTokenOnDestinationChain, _salt);
+    }
+
+    function computeAddress(
+        uint256 _salt,
+        address _underlyingToken,
+        string memory _name,
+        uint64 _crossChainSelector,
+        address _underlyingTokenOnDestinationChain,
+        address _destinationRouterAddress
+    ) public view returns (address) {
+        return _computeAddress(
+            _salt,
+            _underlyingToken,
+            _name,
+            _crossChainSelector,
+            _destinationRouterAddress,
+            _underlyingTokenOnDestinationChain
+        );
+    }
 }

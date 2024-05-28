@@ -96,7 +96,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     uint24 private s_cooldownPeriod = 6 hours;
     // sum of storage space 28 bytes
 
-    address private s_crossChainPool; // the address of the other chain linked to this one
+    address private s_crossChainPool; // the address of the destination chain linked to this one
 
     bytes32 private s_lastSentMessageId;
 
@@ -270,14 +270,14 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
 
     /**
      * @notice burn amount of LPTs and transfer amount of underlying tokens to LP
-     * @notice this function should send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens and update it here! (in the current network, I want to subtract what will be redeemed/burned in the other chain)
-     *  @notice this function should send a message crosschain giving the right amount of underlying tokens to the LP on the other chain
-     *  calculating the amount of tokens to redeem in this and other chain:
+     * @notice this function should send a message updating s_crossChainUnderlyingBalance and s_crossChainLiquidityPoolTokens and update it here! (in the current network, I want to subtract what will be redeemed/burned in the destination chain)
+     *  @notice this function should send a message crosschain giving the right amount of underlying tokens to the LP on the destination chain
+     *  calculating the amount of tokens to redeem in this and destination chain:
      *  1. calculate value of 1 lpt
      *  2. multiply times the n of lpt to burn
      *  3. calculate how much liquidity each pool have in %
-     *         lets say here there are 30% weth and on the other chain 70%
-     *         the user should get 30% of its burned token on current chain and 70% on the other chain
+     *         lets say here there are 30% weth and on the destination chain 70%
+     *         the user should get 30% of its burned token on current chain and 70% on the destination chain
      *  befoore calling this, the lp should call setCooldownForLp
      * @param _lptAmount the LPT amount to burn
      */
@@ -758,7 +758,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     }
 
     /**
-     * @notice get the balances of the pool on the other chain
+     * @notice get the balances of the pool on the destination chain
      */
     function getCrossChainBalances()
         external
@@ -794,7 +794,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
     }
 
     /**
-     * @notice get the sum of the protocol balance (sum the balances in this chain and in the other chain)
+     * @notice get the sum of the protocol balance (sum the balances in this chain and in the destination chain)
      */
     function getTotalProtocolBalances() public view returns (uint256 totalUnderlyingBal, uint256 totalLptBal) {
         totalUnderlyingBal = s_crossChainUnderlyingBalance + i_underlyingToken.balanceOf(address(this));
@@ -808,7 +808,7 @@ contract CrossChainPool is ERC20, ReentrancyGuard, CCIPReceiver, Ownable {
         uint256 totalCrossChainUnderlyingAmount =
             i_underlyingToken.balanceOf(address(this)) + s_crossChainUnderlyingBalance;
 
-        // total lpts on current pool + total lpt on other chain
+        // total lpts on current pool + total lpt on destination chain
         uint256 totalCrossChainLPTAmount = totalSupply() + s_crossChainLiquidityPoolTokens;
 
         if (totalCrossChainLPTAmount == 0) {
