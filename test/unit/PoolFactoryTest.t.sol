@@ -11,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 import {Config} from "../../script/helper/Config.sol";
-import {Register} from "./helpers/Register.sol";
+import {Register} from "../helpers/Register.sol";
 import {DeployPoolFactory} from "../../script/deploy/DeployPoolFactory.s.sol";
 
 contract PoolFactoryTest is Test {

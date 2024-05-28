@@ -5,7 +5,7 @@ pragma solidity 0.8.25;
 import "forge-std/Script.sol";
 import {Script, VmSafe, console2} from "forge-std/Script.sol";
 
-import {Register} from "../../test/unit/helpers/Register.sol";
+import {Register} from "../../test/helpers/Register.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MockRouter} from "../../test/unit/mock/MockRouter.sol";
 
@@ -26,7 +26,6 @@ contract Config is Script {
                 ccipBnMAddress: address(0),
                 ccipLnMAddress: address(0)
             });
-            // eRC20Mock.mint(msg.sender, 100e18);
             register.setNetworkDetails(31337, anvilDetails);
         }
         activeConfig = register.getNetworkDetails(block.chainid);

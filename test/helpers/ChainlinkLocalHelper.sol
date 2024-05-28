@@ -26,6 +26,10 @@ contract ChainlinkLocalHelper is Script {
         ccipLocalSimulator.requestLinkFromFaucet(user, 1000e18);
     }
 
+    function mintFeeTokens(address user) public {
+        ccipLocalSimulator.requestLinkFromFaucet(user, 10000e18);
+    }
+
     function logInfo() public view {
         console2.log("chainSelector %s", chainSelector);
         console2.log("sourceRouter %s", address(sourceRouter));

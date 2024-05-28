@@ -6,7 +6,7 @@ pragma solidity ^0.8.25; // up to
 //////////////////////////////////////////////////////////////*/
 
 import {Test, console2} from "forge-std/Test.sol";
-import {Register} from "./helpers/Register.sol";
+import {Register} from "../helpers/Register.sol";
 import {PoolFactory} from "../../src/PoolFactory.sol";
 import {DeployPoolFactory} from "../../script/deploy/DeployPoolFactory.s.sol";
 import {CrossChainPool} from "../../src/CrossChainPool.sol";
@@ -85,7 +85,6 @@ contract ProtocolTest is Test {
 
         vm.startPrank(DEPLOYER);
         sepoliaFactory = deployPoolFactorySep.run();
-        console2.log("address(sepoliaFactory)", address(sepoliaFactory));
         vm.stopPrank();
 
         ////// ARBITRUM SEPOLIA //////
@@ -239,6 +238,9 @@ contract ProtocolTest is Test {
     }
 
     function testRedeemAfterTeleport() public {
+        vm.selectFork(arbSepoliaFork);
+        uint256 LpBalanceBeforeRedeem = arbSepoliaUnderlying.balanceOf(LP_SEP);
+
         vm.selectFork(sepoliaFork);
         uint256 teleportAmount = 5e18;
 
@@ -276,21 +278,24 @@ contract ProtocolTest is Test {
 
         uint256 totalRedeem = CrossChainPool(deployedSepoliaPool).getRedeemValueForLP(currentLPSEPAmountLpt);
 
-        console2.log("totalRedeem", totalRedeem);
-        console2.log("sum", redeemCurrentChain + redeemCrossChain);
-
         // adding 1 as we have a small decimal precision issue
         assertEq(totalRedeem, redeemCurrentChain + redeemCrossChain + 1); // taking off the last decimals
             // totalRedeem                           = 9999999999999999999
             // redeemCurrentChain + redeemCrossChain = 9999999999999999988
 
         // cooldown and redeem
-        cooldownAndRedeem(LP_SEP, sepoliaFork, deployedSepoliaPool, currentLPSEPAmountLpt);
+        cooldownAndRedeem(LP_SEP, sepoliaFork, arbSepoliaFork, deployedSepoliaPool, currentLPSEPAmountLpt);
 
+        vm.selectFork(sepoliaFork);
         uint256 userUnderlyingBalanceAfterRedeemal = sepoliaUnderlying.balanceOf(LP_SEP);
 
         //making sure the lp get the correct amount back on the current chain
         assertEq(userUnderlyingBalanceAfterRedeemal, userUnderlyingBalanceBeforeRedeemal + redeemCurrentChain);
+
+        //making sure the lp get the redeem amount back on the other chain
+        vm.selectFork(arbSepoliaFork);
+
+        assertLt(LpBalanceBeforeRedeem, LpBalanceBeforeRedeem + redeemCrossChain);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -331,9 +336,13 @@ contract ProtocolTest is Test {
         ccipLocalSimulatorFork.switchChainAndRouteMessage(toFork);
     }
 
-    function cooldownAndRedeem(address user, uint256 fromFork, address fromPool, uint256 currentLPSEPAmountLpt)
-        public
-    {
+    function cooldownAndRedeem(
+        address user,
+        uint256 fromFork,
+        uint256 toFork,
+        address fromPool,
+        uint256 currentLPSEPAmountLpt
+    ) public {
         vm.selectFork(fromFork);
         vm.startPrank(user);
         uint256 ccipFeesRedeem = CrossChainPool(fromPool).getCCipFeesForRedeem(currentLPSEPAmountLpt, user);
@@ -345,5 +354,6 @@ contract ProtocolTest is Test {
 
         CrossChainPool(fromPool).redeem{value: ccipFeesRedeem}(currentLPSEPAmountLpt, user);
         vm.stopPrank();
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(toFork);
     }
 }
