@@ -14,3 +14,9 @@ remappings = [
 sepolia = "${ETHEREUM_SEPOLIA_RPC_URL}" 
 arbitrumSepolia = "${ARBITRUM_SEPOLIA_RPC_URL}" 
 fuji = "${FUJI_C_RPC_URL}" 
+
+
+[invariant]
+runs = 16
+depth = 8
+fail_on_revert = true
