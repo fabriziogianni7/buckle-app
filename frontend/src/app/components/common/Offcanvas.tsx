@@ -21,7 +21,7 @@ export default function Offcanvas() {
             </h3>
             <button type="button" className="flex justify-center items-center size-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700 " data-hs-overlay="#hs-overlay-example">
                 <span className="sr-only">Close modal</span>
-                <svg className="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" strokeLinejoin="round">
+                <svg className="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18"></path>
                     <path d="m6 6 12 12"></path>
                 </svg>
@@ -37,7 +37,7 @@ export default function Offcanvas() {
                         <button type="button" className="hs-collapse-toggle inline-flex items-center gap-x-1 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400" id="hs-show-hide-collapse" data-hs-collapse="#hs-show-hide-collapse-heading-deposits">
                             <span className="hs-collapse-open:hidden">Show More</span>
                             <span className="hs-collapse-open:block hidden">Show Less</span>
-                            <svg className="hs-collapse-open:rotate-180 flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg className="hs-collapse-open:rotate-180 flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="m6 9 6 6 6-6"></path>
                             </svg>
                         </button>
@@ -67,7 +67,7 @@ export default function Offcanvas() {
 
             </ul>
         </div>
-         <div className="p-4 ">
+        <div className="p-4 ">
             <ul className="max-w-xs flex flex-col divide-y divide-gray-200 dark:divide-neutral-700">
                 <div >
                     <h3 className="font-bold text-gray-800 dark:text-white">
@@ -77,7 +77,7 @@ export default function Offcanvas() {
                         <button type="button" className="hs-collapse-toggle inline-flex items-center gap-x-1 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400" id="hs-show-hide-collapse" data-hs-collapse="#hs-show-hide-collapse-heading-teleports">
                             <span className="hs-collapse-open:hidden">Show More</span>
                             <span className="hs-collapse-open:block hidden">Show Less</span>
-                            <svg className="hs-collapse-open:rotate-180 flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg className="hs-collapse-open:rotate-180 flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="m6 9 6 6 6-6"></path>
                             </svg>
                         </button>
@@ -106,7 +106,7 @@ export default function Offcanvas() {
 
 
             </ul>
-        </div> 
+        </div>
     </div>
     );
 }
