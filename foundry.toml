@@ -7,13 +7,15 @@ remappings = [
     '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts/',
     'forge-std/=lib/forge-std/src/',
     'ccip/contracts/=lib/ccip/contracts/src/v0.8/ccip',
-    '@chainlink/local/=lib/chainlink-local/'
+    '@chainlink/local/=lib/chainlink-local/',
+    '@chainlink/contracts/=lib/chainlink/contracts/src/v0.8/'
 ]
 
 [rpc_endpoints]
 sepolia = "${ETHEREUM_SEPOLIA_RPC_URL}" 
 arbitrumSepolia = "${ARBITRUM_SEPOLIA_RPC_URL}" 
 fuji = "${FUJI_C_RPC_URL}" 
+amoy = "${AMOY_RPC_URL}" 
 
 
 [invariant]
