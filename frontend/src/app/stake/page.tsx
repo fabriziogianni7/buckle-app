@@ -14,6 +14,7 @@ export default function Stake() {
 
   useEffect(() => {
     if (logs) {
+      console.log("LOGS", logs)
       const logsElements: Pool[] = logs?.map((l => l.args as Pool))
       setPoolList(logsElements)
     }

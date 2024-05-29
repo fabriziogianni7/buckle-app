@@ -155,7 +155,7 @@ export default function RedeemModal({
                                         You're going to burn LP tokens and get back the correspondent underlying tokens from the pool.
                                     </div>
                                     <div className="mt-1 text-sm text-black-600 dark:text-withe-400">
-                                        Important! You're going to get some token here and some token in the other chain.
+                                        Important! You're going to get some token here and some token in the destination chain.
                                         (need to specify amount here)
                                     </div>
                                     <div className="mt-4">
@@ -184,7 +184,7 @@ export default function RedeemModal({
                                 <div className="ms-3 max-w-30">
                                     <article className="text-sm text-pretty break-all  text-gray-700 dark:text-neutral-400">
                                         <h3>You successfully deposited into the pool.</h3>
-                                        <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/msg/${hash}`}>
+                                        <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/tx/${hash}`} target="_blank">
                                             {hash}
                                         </a>
                                         </p>

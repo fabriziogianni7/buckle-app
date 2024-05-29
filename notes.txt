@@ -39,7 +39,7 @@ arbitrum: 0xde68559ac1a9085FAAfa3831d8Be031Eaa9F8AdD
 
 need to deploy pools;
 make a list of pools;
-every pool should have the address of the other pool in other chain
+every pool should have the address of the other pool in destination chain
 
 make the deposit functionality
 make the teleport functionality
@@ -237,7 +237,7 @@ PLAN:
 - deploy pools on sepolia, arb sepolia, fuji, polygon amoy
 - ship FE on spheron
 - iterate over testing
-- need to test the invariants
+- need to test the invariants (SKIPPED)
 - ship again....
 - nedd to make a demo video and prepare the submission for block magic
 
@@ -249,7 +249,8 @@ REVIEW:
 - check that all the functions follow cex pattern OK 
 - review PoolFactory.sol OK
 - add more unit test for pool factory OK
-- check why redeem precision is wrong
+- check why redeem precision is wrong OK
+- forecasting the address of other pool in PoolFacrtory.sol rather than sending ping/pong (TODAY)
 
 
 // general to implement in FE
@@ -306,3 +307,40 @@ USE getCrossChainBalances to see what is the max amount I can teleport
     //     // uint256 totalSpent = startGas - endGas;
     //     // console2.log("total gas spent, pool, FUNCTION_ID, chainid", totalSpent, functionID, block.chainid);
     // }
+
+
+
+
+
+
+
+
+
+THINGS I DID IN THESE DAYS:
+- public relations
+
+deploy here: amoy, fuji, sepolia, arbitrumsepolia
+deploy fe with spheron / vercel --> share the public link
+I got a bunch of test LINKs I will allow people to actually teleport those links tru testnets!!!
+improve frontend - fixes / dashboard / indexer
+
+- using create2 to create the pools crosschain - resulting in gas savings
+before:
+ping pong mechanism:
+source chain:
+deployCCpools 
+dest chain:
+ccip receive deploy pool and send back a message to source chain (chain where deployCCpools was called)
+
+now:
+source chain:
+deployCCpoolsCreate2 
+-> deploy pool
+-> compute the address of the pool crosschain and add it to the current chain deployed pool
+-> messagge is sent
+dest chain:
+ccip receive deploy pool 
+
+better for gas!!!!!!
+
+- refactored tests!
