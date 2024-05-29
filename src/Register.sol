@@ -41,6 +41,15 @@ contract Register {
             ccipBnMAddress: 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40,
             ccipLnMAddress: 0xc1c76a8c5bFDE1Be034bbcD930c668726E7C1987
         });
+        // Polygon Amoy
+        s_networkDetails[80002] = NetworkDetails({
+            chainSelector: 16281711391670634445,
+            routerAddress: 0x9C32fCB86BF0f4a1A8921a9Fe46de3198bb884B2,
+            linkAddress: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904,
+            wrappedNativeAddress: 0x360ad4f9a9A8EFe9A8DCB5f461c4Cc1047E1Dcf9,
+            ccipBnMAddress: address(0),
+            ccipLnMAddress: address(0)
+        });
         // Avalanche Fuji
         s_networkDetails[43113] = NetworkDetails({
             chainSelector: 14767482510784806043,

@@ -54,15 +54,18 @@ contract PoolFactoryTest is Test {
     function testDeployPoolCreate2() public {
         TestPoolFactory testPoolFactory =
             new TestPoolFactory(activeConfig.routerAddress, activeConfig.linkAddress, activeConfig.chainSelector);
+        TestPoolFactory testPoolFactoryB =
+            new TestPoolFactory(activeConfig.routerAddress, activeConfig.linkAddress, activeConfig.chainSelector);
 
         address _underlyingToken = address(123);
         string memory _name = "create2test";
         uint64 _crossChainSelector = 1;
         address _underlyingTokenOnDestinationChain = address(123);
         address _destinationRouterAddress = 0x20067a7558168e12ad53b235F2f7408FeEa4985F;
+        address _receiverFactory = address(testPoolFactoryB);
         uint256 _salt = 1;
 
-        address deployedPoolCreate2 = testPoolFactory.deployPoolCreate2(
+        address deployedPoolCreate2 = testPoolFactoryB.deployPoolCreate2(
             _underlyingToken, _name, _crossChainSelector, _underlyingTokenOnDestinationChain, _salt
         );
 
@@ -72,7 +75,8 @@ contract PoolFactoryTest is Test {
             _name,
             _crossChainSelector,
             _underlyingTokenOnDestinationChain,
-            _destinationRouterAddress
+            _destinationRouterAddress,
+            _receiverFactory
         );
 
         assertEq(deployedPoolCreate2, computedAddress);
@@ -82,7 +86,7 @@ contract PoolFactoryTest is Test {
 // test contract for the create2 functions / internal function
 contract TestPoolFactory is PoolFactory {
     constructor(address _ccipRouter, address _feeToken, uint64 _selector)
-        PoolFactory(_ccipRouter, _feeToken, _selector)
+        PoolFactory(_ccipRouter, _feeToken, _selector, address(0))
     {}
 
     function deployPoolCreate2(
@@ -102,7 +106,8 @@ contract TestPoolFactory is PoolFactory {
         string memory _name,
         uint64 _crossChainSelector,
         address _underlyingTokenOnDestinationChain,
-        address _destinationRouterAddress
+        address _destinationRouterAddress,
+        address _receiverFactory
     ) public view returns (address) {
         return _computeAddress(
             _salt,
@@ -110,7 +115,8 @@ contract TestPoolFactory is PoolFactory {
             _name,
             _crossChainSelector,
             _destinationRouterAddress,
-            _underlyingTokenOnDestinationChain
+            _underlyingTokenOnDestinationChain,
+            _receiverFactory
         );
     }
 }

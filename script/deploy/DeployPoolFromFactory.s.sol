@@ -12,23 +12,16 @@ contract DeployPoolFromFactory is Script {
         address _receiverFactory,
         address _underlyingTokenOnSourceChain,
         address _underlyingTokenOnDestinationChain,
-        uint64 _destinationChainSelector,
+        uint256 _destinationChainId,
         string memory _poolName
     ) public returns (address crossChainPool) {
         PoolFactory poolFactory = PoolFactory(factoryAddress);
         vm.startBroadcast();
-        // crossChainPool = poolFactory.deployCCPools(
-        //     _receiverFactory,
-        //     _underlyingTokenOnSourceChain,
-        //     _underlyingTokenOnDestinationChain,
-        //     _destinationChainSelector,
-        //     _poolName
-        // );
         crossChainPool = poolFactory.deployCCPoolsCreate2(
             _receiverFactory,
             _underlyingTokenOnSourceChain,
             _underlyingTokenOnDestinationChain,
-            _destinationChainSelector,
+            _destinationChainId,
             _poolName
         );
         vm.stopBroadcast();

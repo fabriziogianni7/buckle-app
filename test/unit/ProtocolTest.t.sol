@@ -17,7 +17,9 @@ contract ProtocolTest is Test {
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
 
     uint64 public sepoliaChainSelector = 16015286601757825753;
-    uint64 public arbSepoliaChainSelector = 3478487238524512106;
+    // uint64 public arbSepoliaChainSelector = 16281711391670634445; //amoy
+    // uint64 public arbSepoliaChainSelector = 14767482510784806043; //fuji
+    uint64 public arbSepoliaChainSelector = 3478487238524512106; // arb
 
     uint256 public sepoliaFork;
     uint256 public arbSepoliaFork;
@@ -62,7 +64,9 @@ contract ProtocolTest is Test {
     function setUp() public {
         // creating forks
         sepoliaFork = vm.createSelectFork(vm.rpcUrl("sepolia"));
+        // arbSepoliaFork = vm.createFork(vm.rpcUrl("amoy"));
         arbSepoliaFork = vm.createFork(vm.rpcUrl("arbitrumSepolia"));
+        // arbSepoliaFork = vm.createFork(vm.rpcUrl("fuji"));
 
         // USING CCIPSimulatorFork
         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
@@ -135,6 +139,12 @@ contract ProtocolTest is Test {
         depositInPool(deployedArbSepoliaPool, INITIAL_DEPOSIT_LP, arbSepoliaUnderlying, arbSepoliaFork, LP_ARB);
 
         ccipLocalSimulatorFork.switchChainAndRouteMessage(sepoliaFork); // here on sepolia
+    }
+
+    function testPriceFeed() public {
+        vm.selectFork(sepoliaFork);
+        int256 price = sepoliaFactory.getLinkUsdPrice();
+        assertNotEq(price, 0);
     }
 
     function testInitialDepositIsOk() public {
@@ -287,8 +297,6 @@ contract ProtocolTest is Test {
 
         // adding 1 as we have a small decimal precision issue
         assertEq(totalRedeem, redeemCurrentChain + redeemCrossChain + 1); // taking off the last decimals
-            // totalRedeem                           = 9999999999999999999
-            // redeemCurrentChain + redeemCrossChain = 9999999999999999988
 
         // cooldown and redeem
         cooldownAndRedeem(LP_SEP, sepoliaFork, arbSepoliaFork, deployedSepoliaPool, currentLPSEPAmountLpt);

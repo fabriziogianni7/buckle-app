@@ -23,16 +23,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {console2} from "forge-std/Test.sol";
-
-import {CrossChainPool} from "./CrossChainPool.sol";
-import {Register} from "./Register.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import {Script, console2} from "forge-std/Script.sol";
 import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
 import {Client} from "ccip/contracts/libraries/Client.sol";
 import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
+
+import {AggregatorV3Interface} from "@chainlink/contracts/shared/interfaces/AggregatorV3Interface.sol";
+// import {VRFV2PlusWrapperConsumerBase} from "@chainlink/contracts/vrf/dev/VRFV2PlusWrapperConsumerBase.sol";
+// import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+
+import {CrossChainPool} from "./CrossChainPool.sol";
+import {Register} from "./Register.sol";
 /**
  * @notice this contract deploy simultaneusly 2 pools on 2 networks
  * todo there should be a function to allow different networks
@@ -62,10 +68,11 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
     bytes private s_lastReceivedData;
     address private immutable i_feeToken;
     uint64 private constant DEPLOY_POOL_FUNCTION_ID = 1;
-    uint64 private constant SUCCESS_DEPLOY_FUNCTION_ID = 2;
     uint64 private immutable i_chainSelectorCurrentChain;
-    mapping(uint64 => address[]) private s_deployedPools; //  maps chain selector to pool array
+    uint256 private s_nonce;
+    mapping(uint64 => address[]) private s_deployedPoolsOnOtherChains; //  maps chain selector to pool array
     address[] private s_allDeployedPoolsInCurrentChain; //  maps chain selector to pool array
+    AggregatorV3Interface private s_priceFeed;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -76,20 +83,28 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         address indexed tokenCrossChain,
         uint64 crosschainSelector
     );
-    event MessageReceived(bytes32 indexed messageId);
+    event DeployCCSuccess(
+        address indexed deployedPool,
+        address indexed underlyingOnCurrentChain,
+        string indexed poolName,
+        uint64 sourceChainSelector,
+        address underlyingTokenOnOtherChain
+    );
     event FeeTokenDeposited(address indexed sender);
     event FeeTokenWithdrawn();
+    event RandomSalt();
 
     /*//////////////////////////////////////////////////////////////
                                  FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _ccipRouter, address _feeToken, uint64 _chainSelector)
+    constructor(address _ccipRouter, address _feeToken, uint64 _chainSelector, address _priceFeed)
         CCIPReceiver(_ccipRouter)
         Ownable(msg.sender)
     {
         i_feeToken = _feeToken;
         i_chainSelectorCurrentChain = _chainSelector;
+        s_priceFeed = AggregatorV3Interface(_priceFeed);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -112,28 +127,31 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         string memory _poolName
     ) external returns (address) {
         NetworkDetails memory destinationConfig = s_networkDetails[_destinationChainId];
+        uint256 salt = s_nonce + 1;
+        s_nonce += 1;
 
         address deployedPool = _deployPoolCreate2(
             _underlyingTokenOnSourceChain,
             _poolName,
             destinationConfig.chainSelector,
             _underlyingTokenOnDestinationChain,
-            1
+            salt
         );
 
-        // compute destination chain pooladdress and set it here as a sender
-        address computedAddress = _computeAddress(
-            1,
+        address receiverFactory = _receiverFactory;
+        address destinationPoolComputedAddress = _computeAddress(
+            salt,
             _underlyingTokenOnDestinationChain,
             _poolName,
             i_chainSelectorCurrentChain,
             destinationConfig.routerAddress,
-            _underlyingTokenOnSourceChain
+            _underlyingTokenOnSourceChain,
+            receiverFactory
         );
 
-        CrossChainPool(deployedPool).addCrossChainSender(computedAddress);
+        CrossChainPool(deployedPool).addCrossChainSender(destinationPoolComputedAddress);
 
-        s_deployedPools[destinationConfig.chainSelector].push(computedAddress);
+        s_deployedPoolsOnOtherChains[destinationConfig.chainSelector].push(destinationPoolComputedAddress);
 
         _sendCCipMessageDeploy(
             _receiverFactory,
@@ -141,8 +159,10 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
             _underlyingTokenOnDestinationChain,
             _poolName,
             deployedPool,
-            _underlyingTokenOnSourceChain
+            _underlyingTokenOnSourceChain,
+            salt
         );
+        // _requestRandomWords();
         return deployedPool;
     }
 
@@ -152,6 +172,8 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
      */
     function depositFeeToken(uint256 _amount) external {
         IERC20(i_feeToken).safeTransferFrom(msg.sender, address(this), _amount);
+        // _requestRandomWords();
+
         emit FeeTokenDeposited(msg.sender);
     }
 
@@ -179,17 +201,13 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         uint256 _salt
     ) internal returns (address poolAddress) {
         address router = getRouter();
-        // uint256 salt = 1; //todo use vrf for that
+
         bytes memory bytecode = type(CrossChainPool).creationCode;
         bytes memory encodedByteCodeAndParams = abi.encodePacked(
             bytecode,
             abi.encode(_underlyingToken, _name, _crossChainSelector, router, _underlyingTokenOnDestinationChain)
         );
-
-        assembly {
-            poolAddress := create2(0, add(encodedByteCodeAndParams, 0x20), mload(encodedByteCodeAndParams), _salt)
-            if iszero(extcodesize(poolAddress)) { revert(0, 0) }
-        }
+        poolAddress = Create2.deploy(0, bytes32(_salt), encodedByteCodeAndParams);
 
         emit PoolCreated(poolAddress, _underlyingToken, _underlyingTokenOnDestinationChain, _crossChainSelector);
         s_allDeployedPoolsInCurrentChain.push(poolAddress);
@@ -205,8 +223,9 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         string memory _name,
         uint64 _crossChainSelector,
         address _destinationRouterAddress,
-        address _underlyingTokenOnDestinationChain
-    ) internal view returns (address) {
+        address _underlyingTokenOnDestinationChain,
+        address _receiverFactory
+    ) internal pure returns (address) {
         bytes memory bytecode = type(CrossChainPool).creationCode;
         bytes memory encodedByteCodeAndParams = abi.encodePacked(
             bytecode,
@@ -220,8 +239,7 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         );
 
         bytes32 bytecodeHash = keccak256(encodedByteCodeAndParams);
-
-        return address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), _salt, bytecodeHash)))));
+        return Create2.computeAddress(bytes32(_salt), bytecodeHash, _receiverFactory);
     }
 
     /**
@@ -240,14 +258,20 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
         address _underlyingOnOtherChain,
         string memory _name,
         address _deployedPoolAddress,
-        address _underlyingTokenOnSourceChain
+        address _underlyingTokenOnSourceChain,
+        uint256 _salt
     ) internal {
         address router = getRouter(); // it is the chainlink router for the current network
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_receiver),
             data: abi.encode(
-                DEPLOY_POOL_FUNCTION_ID, _underlyingOnOtherChain, _name, _deployedPoolAddress, _underlyingTokenOnSourceChain
+                DEPLOY_POOL_FUNCTION_ID,
+                _underlyingOnOtherChain,
+                _name,
+                _deployedPoolAddress,
+                _underlyingTokenOnSourceChain,
+                _salt
             ), //  the parameters to pass into _deployPool
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
@@ -278,32 +302,55 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         s_lastReceivedMessageId = any2EvmMessage.messageId;
-
-        // those are the parameters
         s_lastReceivedData = any2EvmMessage.data;
         (
             uint64 functionID,
             address underlyingOnCurrentChain,
             string memory poolName,
             address deployedPoolOnOtherChain,
-            address underlyingTokenOnOtherChain
-        ) = abi.decode(any2EvmMessage.data, (uint64, address, string, address, address));
-
+            address underlyingTokenOnOtherChain,
+            uint256 salt
+        ) = abi.decode(any2EvmMessage.data, (uint64, address, string, address, address, uint256));
+        address deployedPool;
         if (functionID == DEPLOY_POOL_FUNCTION_ID) {
-            address deployedPool = _deployPoolCreate2(
+            s_nonce += 1;
+            deployedPool = _deployPoolCreate2(
                 underlyingOnCurrentChain,
                 poolName,
-                any2EvmMessage.sourceChainSelector, // the selector of the chain the msg comes from
+                any2EvmMessage.sourceChainSelector,
                 underlyingTokenOnOtherChain,
-                1
+                salt
             );
             CrossChainPool(deployedPool).addCrossChainSender(deployedPoolOnOtherChain);
-            s_deployedPools[any2EvmMessage.sourceChainSelector].push(deployedPoolOnOtherChain);
+            s_deployedPoolsOnOtherChains[any2EvmMessage.sourceChainSelector].push(deployedPoolOnOtherChain);
         }
 
-        emit MessageReceived(any2EvmMessage.messageId);
+        emit DeployCCSuccess(
+            deployedPool,
+            underlyingOnCurrentChain,
+            poolName,
+            any2EvmMessage.sourceChainSelector,
+            underlyingTokenOnOtherChain
+        );
     }
 
+    /// @notice use vrf to make a salt
+    // function _requestRandomWords() internal onlyOwner returns (uint256) {
+    //     bytes memory extraArgs = VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}));
+    //     (uint256 requestId, uint256 reqPrice) = requestRandomness(uint32(100000), uint16(3), uint32(2), extraArgs);
+    //     return requestId;
+    // }
+
+    // function fulfillRandomWords(
+    //     uint256,
+    //     /**
+    //      * _requestId
+    //      */
+    //     uint256[] memory _randomWords
+    // ) internal override {
+    //     s_lastRandomSalt = _randomWords[0];
+    //     emit RandomSalt();
+    // }
     /*//////////////////////////////////////////////////////////////
                          PUBLIC VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -343,10 +390,15 @@ contract PoolFactory is Ownable, CCIPReceiver, Register {
      * @param _chainSelector the ccip chain selector
      */
     function getALlDeployedPoolsForChainSelector(uint64 _chainSelector) external view returns (address[] memory) {
-        return s_deployedPools[_chainSelector];
+        return s_deployedPoolsOnOtherChains[_chainSelector];
     }
 
     function getDeployedPoolsInCurrenChain() external view returns (address[] memory) {
         return s_allDeployedPoolsInCurrentChain;
+    }
+
+    function getLinkUsdPrice() external view returns (int256) {
+        (, int256 answer,,,) = s_priceFeed.latestRoundData();
+        return answer;
     }
 }
