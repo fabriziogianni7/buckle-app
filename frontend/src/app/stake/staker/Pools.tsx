@@ -1,11 +1,13 @@
 'use client'
 
-import { HSOverlay, ICollectionItem } from "preline/preline";
+// import { HSOverlay, ICollectionItem } from "preline/preline";
 import DepositModal from "./modals/DepositModal";
 import { useEffect, useState } from "react";
 import { Pool } from "@/app/config/interfaces";
 import { CCIP_EXPLORER_URL_ADDRESS, addressesToIcons, allowedChainSelectors, allowedTokens, ccipSelectorsTochain, selectorsToIcons } from "@/app/config/generalConfig";
 import Image from 'next/image';
+import { usePathname } from "next/navigation";
+import { HSOverlay, ICollectionItem } from "preline";
 
 
 interface PoolsProp {
@@ -19,9 +21,23 @@ export default function Pools({ pools }: PoolsProp) {
     const [pool, setPool] = useState<`0x${string}` | undefined>()
     const [currentChainToken, setCurrentChainToken] = useState<`0x${string}` | undefined>()
     const [crossChainToken, setCrossChainToken] = useState<`0x${string}` | undefined>()
+    const path = usePathname();
+    const [preline, setPreline] = useState<any>()
+
+    useEffect(() => {
+        const dynamicImport = async () => {
+            const preline = (await import("preline/preline"))
+            setPreline(preline)
+            //  await import("preline/preline").
+
+        }
+        if (path) {
+            dynamicImport()
+        }
+    }, [path])
 
     const openModal = (poolAddress: `0x${string}` | undefined, currentChainTokenAddress: `0x${string}` | undefined, crossChainTokenAddress: `0x${string}` | undefined) => {
-        const modal = HSOverlay.getInstance('#deposit-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
+        const modal = preline.HSOverlay.getInstance('#deposit-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
         setPool(poolAddress)
         setCurrentChainToken(currentChainTokenAddress)
         setCrossChainToken(crossChainTokenAddress)

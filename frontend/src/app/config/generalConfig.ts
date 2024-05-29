@@ -5,9 +5,10 @@ export enum Factories {
     SEPOLIA = 11155111,
     ARB_SEPOLIA = 421614,
     FUJI = 43113,
+    AMOY = 80002,
 }
 
-export type allowedChainids = 11155111 | 421614 | 43113
+export type allowedChainids = 11155111 | 421614 | 43113 | 80002
 
 export const poolMapping = {
     //sepolia

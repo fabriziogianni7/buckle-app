@@ -2,11 +2,12 @@
 
 import { HSOverlay, ICollectionItem } from "preline/preline";
 import RedeemModal from "./modals/RedeemModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserDeposit } from "@/app/config/interfaces";
 import { CCIP_EXPLORER_URL_ADDRESS, ccipSelectorsTochain } from "@/app/config/generalConfig";
 import { formatEther } from "viem";
 import useCrossChainPool from "@/app/hooks/useCrossChainPool";
+import { usePathname } from "next/navigation";
 
 
 interface DepositsProps {
@@ -22,8 +23,23 @@ export default function Deposits({ deposits }: DepositsProps) {
 
     useCrossChainPool()
 
+    const path = usePathname();
+    const [preline, setPreline] = useState<any>()
+
+    useEffect(() => {
+        const dynamicImport = async () => {
+            const preline = (await import("preline/preline"))
+            setPreline(preline)
+            //  await import("preline/preline").
+
+        }
+        if (path) {
+            dynamicImport()
+        }
+    }, [path])
+
     const openModal = (poolAddress: `0x${string}` | undefined) => {
-        const modal = HSOverlay.getInstance('#deposit-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
+        const modal = preline.HSOverlay.getInstance('#deposit-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
         setPool(poolAddress)
         modal.element.open();
     }

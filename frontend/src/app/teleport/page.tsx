@@ -6,6 +6,7 @@ import SourceCard from "./teleporter/cards/SourceCard";
 import DestinationCard from "./teleporter/cards/DestinationCard";
 import { HSOverlay, ICollectionItem } from "preline/preline";
 import TeleportModal from "./teleporter/modals/TeleportModal";
+import { usePathname } from "next/navigation";
 
 
 export interface Network {
@@ -18,6 +19,21 @@ export default function Teleport() {
   const [amountToBridge, setAmountToBridge] = useState<number>()
 
   const { poolsAndTokens } = useAvailableTokensToTeleport(chainSelector as string)
+
+  const path = usePathname();
+  const [preline, setPreline] = useState<any>()
+
+  useEffect(() => {
+    const dynamicImport = async () => {
+      const preline = (await import("preline/preline"))
+      setPreline(preline)
+      //  await import("preline/preline").
+
+    }
+    if (path) {
+      dynamicImport()
+    }
+  }, [path])
 
   const setCorrectAmountToBridge = (amount: number) => {
     const finalValue = amount * 1e18
@@ -32,7 +48,7 @@ export default function Teleport() {
   }
 
   const openModal = () => {
-    const modal = HSOverlay.getInstance('#teleport-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
+    const modal = preline.HSOverlay.getInstance('#teleport-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
     modal.element.open();
   }
 
