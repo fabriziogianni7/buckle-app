@@ -11,22 +11,18 @@ import usePoolCreatedEvents from "./usePoolCreatedEvents";
 
 
 
-export default function useCrossChainPool({
-    poolAddress
-}: {
-    poolAddress?: `0x${string}`
-}) {
+export default function useCrossChainPool() {
     const publicClient = useClient({ config: wagmiConfig })
     const chainId = useChainId() as allowedChainids
     const { address: userAddress } = useAccount()
     const [allPools, setAllpools] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
 
-    const { logs } = usePoolCreatedEvents()
+    const { logs }: { logs: any } = usePoolCreatedEvents()
 
     useEffect(() => {
         if (logs)
-            setAllpools(logs?.map(l => l.args.pool))
+            setAllpools(logs?.map((l: any) => l.args.pool))
     }, [logs])
 
 

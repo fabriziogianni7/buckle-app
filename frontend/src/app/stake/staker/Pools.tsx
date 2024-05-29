@@ -4,7 +4,7 @@ import { HSOverlay, ICollectionItem } from "preline/preline";
 import DepositModal from "./modals/DepositModal";
 import { useEffect, useState } from "react";
 import { Pool } from "@/app/config/interfaces";
-import { CCIP_EXPLORER_URL_ADDRESS, addressesToIcons, allowedChainSelectors, ccipSelectorsTochain, selectorsToIcons } from "@/app/config/generalConfig";
+import { CCIP_EXPLORER_URL_ADDRESS, addressesToIcons, allowedChainSelectors, allowedTokens, ccipSelectorsTochain, selectorsToIcons } from "@/app/config/generalConfig";
 import Image from 'next/image';
 
 
@@ -62,7 +62,7 @@ export default function Pools({ pools }: PoolsProp) {
 
                                                 <Image
                                                     priority
-                                                    src={addressesToIcons[pool.tokenCurrentChain]}
+                                                    src={addressesToIcons[pool.tokenCurrentChain! as allowedTokens]}
                                                     alt="deposit"
                                                     width={20}
                                                     height={20}
@@ -83,7 +83,7 @@ export default function Pools({ pools }: PoolsProp) {
                                             <div className="flex">
                                                 <Image
                                                     priority
-                                                    src={addressesToIcons[pool.tokenCurrentChain]}
+                                                    src={addressesToIcons[pool.tokenCurrentChain! as allowedTokens]}
                                                     alt="deposit"
                                                     width={20}
                                                     height={20}
@@ -100,18 +100,19 @@ export default function Pools({ pools }: PoolsProp) {
                                                 </a>
                                             </div>
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200 ">
                                             <div className="flex">
                                                 <Image
                                                     priority
-                                                    src={selectorsToIcons[pool.crosschainSelector]}
+                                                    src={selectorsToIcons[pool.crosschainSelector!.toString() as allowedChainSelectors]}
                                                     alt="deposit"
                                                     width={20}
                                                     height={20}
                                                     className="mr-4"
                                                 />
                                                 {
-                                                    ccipSelectorsTochain[pool?.crosschainSelector?.toString()]
+                                                    ccipSelectorsTochain[pool?.crosschainSelector!.toString() as allowedChainSelectors]
                                                 }
                                             </div>
                                         </td>

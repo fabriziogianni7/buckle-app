@@ -160,7 +160,7 @@ export default function TeleportModal({
                                             Teleport Tokens
                                         </h3>
                                         <div className="mt-1 text-sm text-gray-600 dark:text-neutral-400  max-w-md ">
-                                            You're going to teleport tokens from {currentChainName} to
+                                            You&apos;re going to teleport tokens from {currentChainName} to
                                             {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}
                                         </div>
                                         <div className="mt-4">

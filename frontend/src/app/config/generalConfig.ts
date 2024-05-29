@@ -1,4 +1,4 @@
-import { crossChainPoolAbi } from "../abis/crossChainPoolAbi";
+
 import { poolFactoryAbi } from "../abis/poolFactoryAbi";
 
 export enum Factories {
@@ -84,6 +84,14 @@ export type allowedChainSelectors =
     "3478487238524512106" |
     "14767482510784806043" |
     "16281711391670634445"
+
+export type allowedTokens =
+    "0xDbb077Ddec08E8b574186098359d30556AF6797D" |
+    "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357" |
+    "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E" |
+    "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846" |
+    "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904" |
+    "0x779877A7B0D9E8603169DdbD7836e478b4624789"
 
 
 enum TokensToIcon {

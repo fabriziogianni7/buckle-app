@@ -46,7 +46,7 @@ export default function useUserPools() {
     }, [logs])
 
     useEffect(() => {
-        let mappedArray: UserDeposit[] = []
+        let mappedArray: UserDeposit[] | any = []
 
         const userDeposits =
             deposits?.filter((d: Deposit) => d.args.lp == userAddress)
@@ -57,7 +57,7 @@ export default function useUserPools() {
                     }
                 })
                 .reduce((_: any, current: { pool: `0x${string}`; args: Deposit["args"]; }) => {
-                    const elementIndex = mappedArray.findIndex((el) => el.pool == current.pool)
+                    const elementIndex = mappedArray.findIndex((el: any) => el.pool == current.pool)
                     if (elementIndex >= 0) {
                         mappedArray[elementIndex].args.lptAmount += current.args.lptAmount
                         mappedArray[elementIndex].args.underlyingAmount += current.args.underlyingAmount

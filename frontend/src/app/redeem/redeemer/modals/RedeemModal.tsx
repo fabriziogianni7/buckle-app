@@ -152,10 +152,10 @@ export default function RedeemModal({
                                         Redeem Tokens
                                     </h3>
                                     <div className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                                        You're going to burn LP tokens and get back the correspondent underlying tokens from the pool.
+                                        You&apos;re going to burn LP tokens and get back the correspondent underlying tokens from the pool.
                                     </div>
                                     <div className="mt-1 text-sm text-black-600 dark:text-withe-400">
-                                        Important! You're going to get some token here and some token in the destination chain.
+                                        Important! You&apos;re going to get some token here and some token in the destination chain.
                                         (need to specify amount here)
                                     </div>
                                     <div className="mt-4">

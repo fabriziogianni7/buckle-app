@@ -161,7 +161,7 @@ export default function DepositModal({
                                         Deposit Tokens
                                     </h3>
                                     <div className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                                        You're going to approve and deposit tokens into the {poolName} pool.
+                                        You&apos;re going to approve and deposit tokens into the {poolName} pool.
                                     </div>
                                     <div className="mt-4">
                                         <div className="flex flex-col space-y-3">

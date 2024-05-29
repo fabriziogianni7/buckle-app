@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AbiEvent, parseAbiItem } from "viem";
 import { getLogs } from "viem/actions";
-import { useAccount, useChainId, useClient, useReadContract, useReadContracts } from "wagmi";
-import { Deposit, Pool, UserDeposit, UserDepositEvent, UserTeleportEvent, UserTeleports } from "../config/interfaces";
+import { useAccount, useChainId, useClient } from "wagmi";
+import { UserDeposit, UserDepositEvent, UserTeleportEvent, UserTeleport } from "../config/interfaces";
 import { crossChainPoolAbi } from "../abis/crossChainPoolAbi";
 import usePoolCreatedEvents from "./usePoolCreatedEvents";
 
@@ -18,9 +18,9 @@ export default function useUserTransactions() {
     const [allPools, setAllpools] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [allUserDesposits, setAllUserDesposits] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
-    const [userTeleports, setUserTeleports] = useState<UserTeleports[] | undefined>()
+    const [userTeleports, setUserTeleports] = useState<UserTeleport[] | undefined>()
 
-    const { logs } = usePoolCreatedEvents()
+    const { logs }: { logs: any } = usePoolCreatedEvents()
 
     /////////////////////////////////
     ////// all deposit events //////
@@ -41,7 +41,7 @@ export default function useUserTransactions() {
 
     useEffect(() => {
         if (logs)
-            setAllpools(logs?.map(l => l.args.pool))
+            setAllpools(logs?.map((l: any) => l.args.pool))
     }, [logs])
 
     useEffect(() => {

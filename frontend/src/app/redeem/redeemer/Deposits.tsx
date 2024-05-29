@@ -20,9 +20,7 @@ export default function Deposits({ deposits }: DepositsProps) {
     const [currentChainToken, setCurrentChainToken] = useState<`0x${string}` | undefined>()
     const [crossChainToken, setCrossChainToken] = useState<`0x${string}` | undefined>()
 
-    useCrossChainPool({
-        poolAddresses: deposits?.map(el => el.pool) as `0x${string}`[]
-    })
+    useCrossChainPool()
 
     const openModal = (poolAddress: `0x${string}` | undefined) => {
         const modal = HSOverlay.getInstance('#deposit-modal' as unknown as HTMLElement, true) as ICollectionItem<HSOverlay>;
@@ -47,7 +45,7 @@ export default function Deposits({ deposits }: DepositsProps) {
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                                 {
-                                    deposits && deposits.map((deposit: UserDeposit, i) => <tr key={i}>
+                                    deposits && deposits.map((deposit: UserDeposit | any, i) => <tr key={i}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-neutral-200">{
                                             <a className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded"
                                                 href={`${CCIP_EXPLORER_URL_ADDRESS}${deposit.pool}`}

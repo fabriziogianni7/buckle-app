@@ -45,7 +45,9 @@ export default function Offcanvas() {
                 </div>
                 <div id="hs-show-hide-collapse-heading-deposits" className="hs-collapse hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-show-hide-collapse">
                     {
-                        userDeposits?.map(d => <li className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
+                        userDeposits?.map((d, i) => <li
+                            key={i}
+                            className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
                             <div >
                                 <p>{formatEther(d.underlyingAmount)} UTK</p>
                                 <a className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded"
@@ -85,7 +87,9 @@ export default function Offcanvas() {
                 </div>
                 <div id="hs-show-hide-collapse-heading-teleports" className="hs-collapse hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-show-hide-collapse">
                     {
-                        userTeleports?.map(t => <li className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
+                        userTeleports?.map((t, i) => <li
+                            key={i}
+                            className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
                             <div >
                                 <p>{formatEther(t.value)} UTK</p>
                                 <a className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded"

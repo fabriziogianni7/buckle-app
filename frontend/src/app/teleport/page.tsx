@@ -11,23 +11,6 @@ import TeleportModal from "./teleporter/modals/TeleportModal";
 export interface Network {
   pools: Pool[]
 }
-// 1st step: chose destination network
-// 2nd step: chose available token
-
-// for 1 and 2:
-
-// get pools in current chain from event,
-//   get selector from pool
-//   filter the tokens based on the destination chain chosen by the _underlyingTokenOnSourceChain
-
-
-
-// 3rd step: chose amount
-// 4th step: send tx
-// 4a: forecast ccip fees
-// 4b: forecast buckle fees
-// 4c: approve pool to spend token
-// 4d: send teleport tx
 export default function Teleport() {
   const [chainSelector, setChainSelector] = useState<string>()
   const [poolAddress, setPoolAddress] = useState<`0x${string}` | undefined>()

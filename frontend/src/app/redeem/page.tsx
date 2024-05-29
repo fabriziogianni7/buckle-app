@@ -1,9 +1,5 @@
 'use client'
-import { useEffect, useState } from "react";
-
-
 import Deposits from "./redeemer/Deposits";
-import { Pool } from "../config/interfaces";
 import useUserPools from "../hooks/useUserPools";
 
 
