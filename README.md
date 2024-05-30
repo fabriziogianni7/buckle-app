@@ -19,7 +19,7 @@ Please, follow me on [youtube](https://www.youtube.com/@fabriziogianni7) and [he
 
 ## What is Buckle App
 
-**Buckle App** is a trustless cross chain bridge/swap protocol operating with Chainlink ccip. It's inspired by the model of [atomic swaps](https://chain.link/education-hub/atomic-swaps), but it's much more.
+**Buckle** is a trustless cross chain bridge protocol operating with Chainlink ccip. It's inspired by the model of [atomic swaps](https://chain.link/education-hub/atomic-swaps), but it's much more.
 
 Buckle App has its **Cross Chain Pools Pairs** where LPs can deposit Tokens and earn fees and other users can transfer their tokens from network to network. We will replace the term "bridge" with "teleport".
 
@@ -39,4 +39,18 @@ Buckle App is like is a trustless, automated atomic swap protocol, based on pool
 | Custodial Risk  | None          | It's non custodial                                                              |
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 
-## How does it work
+## How does it Works
+Buckle Is a protocol composed by 2 smart contracts:
+CrossChainPool and PoolFactory.
+
+- [CrossChainPool](https://github.com/fabriziogianni7/buckle-app/blob/main/src/CrossChainPool.sol)
+This is the contract that allow users to teleport tokens and LPs to stake tokens and earn fees. *each CrossChainPool is deployed and connected in pair with another pool on another chain*. the 2 pools can move 1 token from chain A to chain B.
+When a user want to do a teleport, the pool uses ccip to send a simple message to the other pool.
+at this point. the user deposit some tokens in pool on chain A and the pool send a message to pool on chain B telling to release to the address of the user the same amount of tokens less the protocol fees.
+user pay ccip fees in native currency.
+Each pool has the count of how much token are in the pool on the other chain, so it's not possible to teleport more than the amount present on the other pool.
+
+- [PoolFactory](https://github.com/fabriziogianni7/buckle-app/blob/main/src/PoolFactory.sol)
+This contract deploys a pool pair with 1 transaction. it uses a ccip message to do that.
+it uses `CREATE2` opcode to do so. it compute the address of the pool that will be deployed on chain B and set it as allowed sender on the pool on chain A. when the message lands on chain B, the receive function set the address of the deployed pool on chain A as allowed sender.
+
