@@ -10,16 +10,15 @@ import { Pool } from "../config/interfaces";
 export default function Stake() {
   const [poolList, setPoolList] = useState<Pool[]>()
 
-  const { logs } = usePoolCreatedEvents()
+  const { poolCreatedEvents } = usePoolCreatedEvents()
 
   useEffect(() => {
-    if (logs) {
-      console.log("LOGS", logs)
-      const logsElements: Pool[] = logs?.map((l => l.args as Pool))
+    if (poolCreatedEvents) {
+      const logsElements: Pool[] = poolCreatedEvents?.map(((l: any) => l?.args as Pool))
       setPoolList(logsElements)
     }
 
-  }, [logs])
+  }, [poolCreatedEvents])
 
   return (
     <main className="flex min-h-screen flex-col justify-start p-24">

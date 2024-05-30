@@ -20,7 +20,7 @@ export default function useUserTransactions() {
     const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
     const [userTeleports, setUserTeleports] = useState<UserTeleport[] | undefined>()
 
-    const { logs }: { logs: any } = usePoolCreatedEvents()
+    const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
 
     /////////////////////////////////
     ////// all deposit events //////
@@ -40,9 +40,9 @@ export default function useUserTransactions() {
     })
 
     useEffect(() => {
-        if (logs)
-            setAllpools(logs?.map((l: any) => l.args.pool))
-    }, [logs])
+        if (poolCreatedEvents)
+            setAllpools(poolCreatedEvents?.map((l: any) => l?.args?.pool))
+    }, [poolCreatedEvents])
 
     useEffect(() => {
         if (depositEvents) {
@@ -92,6 +92,16 @@ export default function useUserTransactions() {
             setUserTeleports(teleports)
         }
     }, [teleportEvents])
+
+
+    // const { data: symbol } = useReadContracts({
+    //     abi: crossChainPoolAbi,
+    //     address: poolAddress,
+    //     functionName: "calculateAmountToRedeem",
+    //     args: [
+    //         amount
+    //     ]
+    // })
 
 
 

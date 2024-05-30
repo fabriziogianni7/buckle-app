@@ -3,9 +3,8 @@ import { ierc20Abi } from "@/app/abis/ierc20Abi";
 import CustomInput from "@/app/components/common/CustomInput";
 import { useEffect, useState } from "react";
 import { formatEther } from "viem";
-import { useAccount, useContractRead, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import Image from 'next/image';
-// import * as depositIcon from "/icons-buckle/deposit-icon-withe.svg";
 
 
 interface DepositModalProps {

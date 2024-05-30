@@ -1,40 +1,87 @@
 import { wagmiConfig } from "@/app/config/WagmiConfig";
 import { allowedChainids, eventSigs, poolMapping } from "@/app/config/generalConfig";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AbiEvent, parseAbiItem } from "viem";
 import { getLogs } from "viem/actions";
-import { useChainId, useClient } from "wagmi";
+import { useBlockNumber, useChainId, useClient } from "wagmi";
 
 
 export default function usePoolCreatedEvents() {
     const publicClient = useClient({ config: wagmiConfig })
-
     const chainId = useChainId() as allowedChainids
-
-
-    const { data: logs } = useQuery({
-        queryKey: ['logs', publicClient.uid],
-        queryFn: () =>
-
-            getLogs(publicClient, {
-                address: poolMapping[chainId].factory,
-                event: parseAbiItem(eventSigs.PoolFactory.poolCreated) as AbiEvent,
-                fromBlock: poolMapping[chainId].fromBlock,
-            })
+    const { data: latestBlock } = useBlockNumber({
+        chainId
     })
+    const [poolCreatedEvents, setPoolCreatedEvents] = useState<any>()
 
-    // const { data: allLogs } = useQuery({
-    //     queryKey: ['allLogs', publicClient.uid],
-    //     queryFn: () =>
-    //         getLogs(publicClient, {
-    //             address: "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846",
-    //             // event: parseAbiItem(eventSigs.PoolFactory.poolCreated) as AbiEvent,
-    //             // fromBlock: 0n,
-    //         })
-    // })
+    useEffect(() => {
+        if (latestBlock) {
+            const fetchLogsFunction = async () => {
+                try {
+                    if (latestBlock) {
+                        const totalBlocks = Number(latestBlock - poolMapping[chainId].fromBlock)
+                        const chunkLen = 2045
+                        const nChunks = Math.floor(totalBlocks / chunkLen)
+                        const promArr = []
+                        for (let i = 0; i <= nChunks; i++) {
+                            if (chainId == 43113 || chainId == 80002) {
+                                const fromBlock = BigInt(Number(poolMapping[chainId].fromBlock) + chunkLen * i)
+                                const toBlock = BigInt(Number(fromBlock) + chunkLen)
 
-    useEffect(() => console.log("wagmiConfig", wagmiConfig))
+                                const query = new Promise<any>(async (res, rej) => {
+                                    try {
+                                        res(await getLogs(publicClient, {
+                                            address: poolMapping[chainId].factory,
+                                            event: parseAbiItem(eventSigs.PoolFactory.poolCreated) as AbiEvent,
+                                            fromBlock,
+                                            toBlock
+                                        }))
+                                    } catch (error) {
+                                        rej(error)
+                                    }
+                                })
+                                promArr.push(query)
 
-    return { logs }
+                            }
+                            else {
+
+                                const query = new Promise<any>(async (res, rej) => {
+                                    try {
+                                        res(await getLogs(publicClient, {
+                                            address: poolMapping[chainId].factory,
+                                            event: parseAbiItem(eventSigs.PoolFactory.poolCreated) as AbiEvent,
+                                            fromBlock: poolMapping[chainId].fromBlock,
+                                        }))
+                                    } catch (error) {
+                                        rej(error)
+                                    }
+                                })
+                                promArr.push(query)
+                                break
+                            }
+                        }
+                        const promResult = (await Promise.allSettled(promArr)).flatMap((el: any) => el.value)
+                            .filter((el: any) => el != undefined)
+                        setPoolCreatedEvents(promResult)
+                    }
+
+                } catch (error) {
+                    console.log(error)
+                }
+
+
+
+            }
+            fetchLogsFunction()
+        }
+
+    }, [latestBlock, chainId])
+
+    useEffect(() => {
+        // debugger
+        console.log("poolCreatedEvents", poolCreatedEvents)
+    }, [poolCreatedEvents])
+
+
+    return { poolCreatedEvents }
 }

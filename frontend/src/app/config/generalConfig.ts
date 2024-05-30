@@ -67,7 +67,7 @@ export const eventSigs = {
         poolCreated: "event PoolCreated(address indexed pool, address indexed tokenCurrentChain, address indexed tokenCrossChain, uint64 crosschainSelector)"
     },
     crossChainPool: {
-        deposited: "event DepositedAndMintedLpt(address indexed lp, uint256 indexed lptAmount, uint256 indexed underlyingAmount)",
+        deposited: "event DepositedAndMintedLpt(address indexed lp,        uint256 indexed lptAmount,address indexed underlyingToken,        uint256 underlyingAmount,uint256 chainid)",
         teleported: "event TeleportStarted(uint256 indexed value, address indexed to)",
     }
 }

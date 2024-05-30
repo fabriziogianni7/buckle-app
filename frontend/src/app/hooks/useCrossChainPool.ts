@@ -18,12 +18,12 @@ export default function useCrossChainPool() {
     const [allPools, setAllpools] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
 
-    const { logs }: { logs: any } = usePoolCreatedEvents()
+    const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
 
     useEffect(() => {
-        if (logs)
-            setAllpools(logs?.map((l: any) => l.args.pool))
-    }, [logs])
+        if (poolCreatedEvents)
+            setAllpools(poolCreatedEvents?.map((l: any) => l?.args?.pool))
+    }, [poolCreatedEvents])
 
 
 

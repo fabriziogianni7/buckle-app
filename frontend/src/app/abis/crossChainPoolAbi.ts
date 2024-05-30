@@ -171,6 +171,15 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "function",
+        "name": "getCCipFeesForCooldown",
+        "inputs": [
+            { "name": "_lptAmount", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "getCCipFeesForDeposit",
         "inputs": [
             { "name": "_value", "type": "uint256", "internalType": "uint256" }
@@ -196,6 +205,18 @@ export const crossChainPoolAbi = [
             { "name": "_to", "type": "address", "internalType": "address" }
         ],
         "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "getCooldown",
+        "inputs": [
+            { "name": "lp", "type": "address", "internalType": "address" }
+        ],
+        "outputs": [
+            { "name": "", "type": "uint256", "internalType": "uint256" },
+            { "name": "", "type": "bool", "internalType": "bool" }
+        ],
         "stateMutability": "view"
     },
     {
@@ -230,11 +251,7 @@ export const crossChainPoolAbi = [
         "type": "function",
         "name": "getGasLimitValues",
         "inputs": [],
-        "outputs": [
-            { "name": "", "type": "uint256", "internalType": "uint256" },
-            { "name": "", "type": "uint256", "internalType": "uint256" },
-            { "name": "", "type": "uint256", "internalType": "uint256" }
-        ],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
         "stateMutability": "view"
     },
     {
@@ -327,23 +344,36 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "function",
+        "name": "setCooldownForLp",
+        "inputs": [
+            { "name": "_lptAmount", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [],
+        "stateMutability": "payable"
+    },
+    {
+        "type": "function",
+        "name": "setCooldownPeriod",
+        "inputs": [
+            { "name": "_period", "type": "uint24", "internalType": "uint24" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setFeePercentage",
+        "inputs": [
+            { "name": "_fee_bps", "type": "uint16", "internalType": "uint16" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
         "name": "setGasLimitValues",
         "inputs": [
-            {
-                "name": "_gas_limit_teleport",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "_gas_limit_deposit",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "_gas_limit_redeem",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
+            { "name": "_gas_limit", "type": "uint24", "internalType": "uint24" }
         ],
         "outputs": [],
         "stateMutability": "nonpayable"
@@ -453,9 +483,21 @@ export const crossChainPoolAbi = [
                 "internalType": "uint256"
             },
             {
+                "name": "underlyingToken",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
                 "name": "underlyingAmount",
                 "type": "uint256",
-                "indexed": true,
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "chainid",
+                "type": "uint256",
+                "indexed": false,
                 "internalType": "uint256"
             }
         ],
@@ -495,7 +537,7 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "event",
-        "name": "RedeemedCrossChain",
+        "name": "Redeem",
         "inputs": [
             {
                 "name": "lp",
@@ -512,44 +554,7 @@ export const crossChainPoolAbi = [
             {
                 "name": "chainid",
                 "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "messageId",
-                "type": "bytes32",
                 "indexed": true,
-                "internalType": "bytes32"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "RedeemedCurrentChain",
-        "inputs": [
-            {
-                "name": "lp",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "lptAmountBurnt",
-                "type": "uint256",
-                "indexed": true,
-                "internalType": "uint256"
-            },
-            {
-                "name": "underlyingAmount",
-                "type": "uint256",
-                "indexed": true,
-                "internalType": "uint256"
-            },
-            {
-                "name": "chainid",
-                "type": "uint256",
-                "indexed": false,
                 "internalType": "uint256"
             }
         ],
@@ -557,10 +562,10 @@ export const crossChainPoolAbi = [
     },
     {
         "type": "event",
-        "name": "TeleportStarted",
+        "name": "Teleport",
         "inputs": [
             {
-                "name": "value",
+                "name": "teleportedAmount",
                 "type": "uint256",
                 "indexed": true,
                 "internalType": "uint256"
@@ -570,6 +575,18 @@ export const crossChainPoolAbi = [
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
+            },
+            {
+                "name": "underlyingToken",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "crosschainSelector",
+                "type": "uint64",
+                "indexed": false,
+                "internalType": "uint64"
             }
         ],
         "anonymous": false
@@ -614,6 +631,16 @@ export const crossChainPoolAbi = [
         ]
     },
     { "type": "error", "name": "CrossChainPool__AmountTooSmall", "inputs": [] },
+    {
+        "type": "error",
+        "name": "CrossChainPool__CooldownAmountTooHigh",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "CrossChainPool__CooldownNotExpired",
+        "inputs": []
+    },
     {
         "type": "error",
         "name": "CrossChainPool__NotEnoughBalanceOnDestinationPool",
