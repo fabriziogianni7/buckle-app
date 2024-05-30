@@ -4,9 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AbiEvent, parseAbiItem } from "viem";
 import { getLogs } from "viem/actions";
-import { useAccount, useChainId, useClient } from "wagmi";
+import { useAccount, useBlockNumber, useChainId, useClient } from "wagmi";
 import { UserDeposit, UserDepositEvent, UserTeleportEvent, UserTeleport } from "../config/interfaces";
-import { crossChainPoolAbi } from "../abis/crossChainPoolAbi";
 import usePoolCreatedEvents from "./usePoolCreatedEvents";
 
 
@@ -18,7 +17,13 @@ export default function useUserTransactions() {
     const [allPools, setAllpools] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [allUserDesposits, setAllUserDesposits] = useState<(`0x${string}` | undefined)[] | undefined>()
     const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
+    const [depositEvents, setDepositEvents] = useState<any | undefined>()
+    const [teleportEvents, setTeleportEvents] = useState<any | undefined>()
     const [userTeleports, setUserTeleports] = useState<UserTeleport[] | undefined>()
+
+    const { data: latestBlock } = useBlockNumber({
+        chainId
+    })
 
     const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
 
@@ -26,23 +31,71 @@ export default function useUserTransactions() {
     ////// all deposit events //////
     /////////////////////////////////
 
-    const { data: depositEvents } = useQuery<UserDepositEvent | any>({
-        queryKey: ['depositsEvents', publicClient.uid],
-        queryFn: () =>
-            getLogs(publicClient, {
-                address: allPools as any,
-                event: parseAbiItem(eventSigs.crossChainPool.deposited) as AbiEvent,
-                fromBlock: poolMapping[chainId].fromBlock,
-                args: {
-                    lp: userAddress,
-                }
-            })
-    })
 
     useEffect(() => {
-        if (poolCreatedEvents)
-            setAllpools(poolCreatedEvents?.map((l: any) => l?.args?.pool))
-    }, [poolCreatedEvents])
+
+        const fetchLogsFunction = async () => {
+            try {
+                if (latestBlock) {
+                    const totalBlocks = Number(latestBlock - poolMapping[chainId].fromBlock)
+                    const chunkLen = 2045
+                    const nChunks = Math.floor(totalBlocks / chunkLen)
+                    const promArr = []
+                    for (let i = 0; i <= nChunks; i++) {
+                        if (chainId == 43113 || chainId == 80002) {
+                            const fromBlock = BigInt(Number(poolMapping[chainId].fromBlock) + chunkLen * i)
+                            const toBlock = BigInt(Number(fromBlock) + chunkLen)
+
+                            const query = new Promise<any>(async (res, rej) => {
+                                try {
+                                    res(await getLogs(publicClient, {
+                                        address: allPools as any,
+                                        event: parseAbiItem(eventSigs.crossChainPool.deposited) as AbiEvent,
+                                        fromBlock,
+                                        toBlock
+                                    }))
+                                } catch (error) {
+                                    rej(error)
+                                }
+                            })
+                            promArr.push(query)
+
+                        }
+                        else {
+
+                            const query = new Promise<any>(async (res, rej) => {
+                                try {
+                                    res(await getLogs(publicClient, {
+                                        address: allPools as any,
+                                        event: parseAbiItem(eventSigs.crossChainPool.deposited) as AbiEvent,
+                                        fromBlock: poolMapping[chainId].fromBlock,
+                                    }))
+                                } catch (error) {
+                                    rej(error)
+                                }
+                            })
+                            promArr.push(query)
+                            break
+                        }
+                    }
+                    const promResult = (await Promise.allSettled(promArr)).flatMap((el: any) => el.value)
+                        .filter((el: any) => el != undefined)
+                    setDepositEvents(promResult)
+                }
+
+            } catch (error) {
+                console.log(error)
+            }
+
+
+
+        }
+        fetchLogsFunction()
+
+
+    }, [latestBlock, chainId])
+
+    useEffect(() => console.log("depositEvents", depositEvents))
 
     useEffect(() => {
         if (depositEvents) {
@@ -59,24 +112,86 @@ export default function useUserTransactions() {
     }, [depositEvents])
 
 
-
     /////////////////////////////////
     ////// all teleport events //////
     /////////////////////////////////
 
+    useEffect(() => {
 
-    const { data: teleportEvents } = useQuery<UserTeleportEvent | any>({
-        queryKey: ['teleportsEvent', publicClient.uid],
-        queryFn: () =>
-            getLogs(publicClient, {
-                address: allPools as any,
-                event: parseAbiItem(eventSigs.crossChainPool.teleported) as AbiEvent,
-                fromBlock: poolMapping[chainId].fromBlock,
-                args: {
-                    to: userAddress,
+        const fetchLogsFunction = async () => {
+            try {
+                if (latestBlock) {
+                    const totalBlocks = Number(latestBlock - poolMapping[chainId].fromBlock)
+                    const chunkLen = 2045
+                    const nChunks = Math.floor(totalBlocks / chunkLen)
+                    const promArr = []
+                    for (let i = 0; i <= nChunks; i++) {
+                        if (chainId == 43113 || chainId == 80002) {
+                            const fromBlock = BigInt(Number(poolMapping[chainId].fromBlock) + chunkLen * i)
+                            const toBlock = BigInt(Number(fromBlock) + chunkLen)
+
+                            const query = new Promise<any>(async (res, rej) => {
+                                try {
+                                    res(await getLogs(publicClient, {
+                                        address: allPools as any,
+                                        event: parseAbiItem(eventSigs.crossChainPool.teleported) as AbiEvent,
+                                        fromBlock,
+                                        toBlock
+                                    }))
+                                } catch (error) {
+                                    rej(error)
+                                }
+                            })
+                            promArr.push(query)
+
+                        }
+                        else {
+
+                            const query = new Promise<any>(async (res, rej) => {
+                                try {
+                                    res(await getLogs(publicClient, {
+                                        address: allPools as any,
+                                        event: parseAbiItem(eventSigs.crossChainPool.teleported) as AbiEvent,
+                                        fromBlock: poolMapping[chainId].fromBlock,
+                                    }))
+                                } catch (error) {
+                                    rej(error)
+                                }
+                            })
+                            promArr.push(query)
+                            break
+                        }
+                    }
+                    const promResult = (await Promise.allSettled(promArr)).flatMap((el: any) => el.value)
+                        .filter((el: any) => el != undefined)
+                    setTeleportEvents(promResult)
                 }
-            })
-    })
+
+            } catch (error) {
+                console.log(error)
+            }
+
+
+
+        }
+        fetchLogsFunction()
+
+
+    }, [latestBlock, chainId])
+
+
+    // const { data: teleportEvents } = useQuery<UserTeleportEvent | any>({
+    //     queryKey: ['teleportsEvent', publicClient.uid],
+    //     queryFn: () =>
+    //         getLogs(publicClient, {
+    //             address: allPools as any,
+    //             event: parseAbiItem(eventSigs.crossChainPool.teleported) as AbiEvent,
+    //             fromBlock: poolMapping[chainId].fromBlock,
+    //             args: {
+    //                 to: userAddress,
+    //             }
+    //         })
+    // })
 
 
     useEffect(() => {

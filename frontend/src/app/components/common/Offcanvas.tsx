@@ -49,12 +49,12 @@ export default function Offcanvas() {
                             key={i}
                             className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
                             <div >
-                                <p>{formatEther(d.underlyingAmount)} UTK</p>
+                                <p>{d?.underlyingAmount ? formatEther(d?.underlyingAmount) : 0} LP Tokens</p>
                                 <a className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded"
-                                    href={`${CCIP_EXPLORER_URL_TX}${d.txHash}`}
+                                    href={`${CCIP_EXPLORER_URL_TX}${d?.txHash}`}
                                     target="_blank"
                                 >
-                                    {d.txHash.substring(0, 16)}...
+                                    {d?.txHash?.substring(0, 16)}...
                                 </a>
                             </div>
                         </li>)
@@ -91,9 +91,9 @@ export default function Offcanvas() {
                             key={i}
                             className="inline-flex items-center gap-x-2 py-3 text-sm font-medium text-gray-800 dark:text-white ">
                             <div >
-                                <p>{formatEther(t.value)} UTK</p>
+                                <p>{formatEther(t?.value)} UTK</p>
                                 <a className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded"
-                                    href={`${CCIP_EXPLORER_URL_TX}${t.txHash}`}
+                                    href={`${CCIP_EXPLORER_URL_TX}${t?.txHash}`}
                                     target="_blank"
                                 >
                                     {t.txHash.substring(0, 16)}...

@@ -53,6 +53,21 @@ export default function DepositModal({
         ]
     })
 
+    const { data: lptInExchangeOfUnderlying } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "calculateLPTinExchangeOfUnderlying",
+        args: [
+            amount
+        ]
+    })
+
+    const { data: symbol } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "symbol",
+    })
+
     const { isLoading: isConfirming, isSuccess: isConfirmed } =
         useWaitForTransactionReceipt({
             hash,
@@ -168,8 +183,7 @@ export default function DepositModal({
 
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
                                             dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
-                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: FREE</span>
-                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get 100 LPT </span>
+                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get:    {lptInExchangeOfUnderlying as bigint ? formatEther(lptInExchangeOfUnderlying as bigint).substring(0, 15) : 0} {symbol as string} </span>
                                         </div>
                                     </div>
                                 </div>
@@ -188,7 +202,7 @@ export default function DepositModal({
                                 <div className="ms-3 max-w-30">
                                     <article className="text-sm text-pretty break-all  text-gray-700 dark:text-neutral-400">
                                         <h3>You successfully deposited into the pool.</h3>
-                                        <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/msg/${hash}`}>
+                                        <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/tx/${hash}`} target="_blank">
                                             {hash}
                                         </a>
                                         </p>

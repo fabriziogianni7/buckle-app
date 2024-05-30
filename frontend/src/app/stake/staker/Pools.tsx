@@ -44,7 +44,6 @@ export default function Pools({ pools }: PoolsProp) {
         modal.element.open();
     }
 
-    useEffect(() => console.log(pools))
     return (
         <div className="flex flex-col">
             <div className="-m-1.5 overflow-x-auto">
