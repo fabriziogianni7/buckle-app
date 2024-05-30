@@ -7,6 +7,8 @@ import DestinationCard from "./teleporter/cards/DestinationCard";
 import { HSOverlay, ICollectionItem } from "preline/preline";
 import TeleportModal from "./teleporter/modals/TeleportModal";
 import { usePathname } from "next/navigation";
+import { useChainId } from "wagmi";
+import { getChain } from "../config/generalConfig";
 
 
 export interface Network {
@@ -19,7 +21,7 @@ export default function Teleport() {
   const [amountToBridge, setAmountToBridge] = useState<number>()
 
   const { poolsAndTokens } = useAvailableTokensToTeleport(chainSelector as string)
-
+  const chainId = useChainId()
   const path = usePathname();
   const [preline, setPreline] = useState<any>()
 
@@ -76,15 +78,15 @@ export default function Teleport() {
       lg:space-x-20 
       sm:flex-row sm:items-center sm: sm:mt-0 sm:ps-5">
           <SourceCard
-            title="Starting Network"
-            subtitle="Chose Token to bridge and How much you need to bridge"
+            title={"From " + getChain(chainId).name}
+            subtitle="Chose token and amount"
             poolsAndTokens={poolsAndTokens}
             selectedToken={tokenToBridge}
             setTokenToBridge={setTokenToBridge}
             setAmountToBridge={setCorrectAmountToBridge}
           />
 
-          <DestinationCard title="Destination Network" subtitle="Chose where you want the tokens"
+          <DestinationCard title="Select Destination Network" subtitle="Chose where you want the tokens"
             setDestinationSelector={setChainSelector}
           />
         </div >

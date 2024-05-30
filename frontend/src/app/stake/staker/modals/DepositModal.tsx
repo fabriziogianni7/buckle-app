@@ -3,8 +3,10 @@ import { ierc20Abi } from "@/app/abis/ierc20Abi";
 import CustomInput from "@/app/components/common/CustomInput";
 import { useEffect, useState } from "react";
 import { formatEther } from "viem";
-import { useAccount, useContractRead, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import Image from 'next/image';
+import { poolFactoryAbi } from "@/app/abis/poolFactoryAbi";
+import { allowedChainids, poolMapping } from "@/app/config/generalConfig";
 // import * as depositIcon from "/icons-buckle/deposit-icon-withe.svg";
 
 
@@ -25,9 +27,12 @@ export default function DepositModal({
     // forecast the fees to pay to ccip read
     // call deposit write
     const [amount, setAmount] = useState<number>()
+    const [usdLinkPrice, setUsdLinkPrice] = useState<number>()
     const [phase, setPhase] = useState<"approve" | "deposit" | "success">()
     const { writeContract, error, context, data: hash, status, isPending } = useWriteContract()
     const { address } = useAccount()
+    const chainId = useChainId() as allowedChainids
+
 
     const resetState = () => {
         setPhase(undefined)
@@ -43,6 +48,21 @@ export default function DepositModal({
             poolAddress
         ]
     })
+
+    const { data: linkusdprice, error: errorPricefeed } = useReadContract({
+        abi: poolFactoryAbi,
+        address: poolMapping[chainId].factory,
+        functionName: "getLinkUsdPrice"
+
+    })
+
+    useEffect(() => {
+        if (linkusdprice)
+            setUsdLinkPrice(Number(linkusdprice) * Number(amount))
+        console.log("errorPricefeed", errorPricefeed, Number(linkusdprice) * 1e8 * Number(amount))
+
+    }, [linkusdprice, amount])
+
 
     const { data: ccipFees } = useReadContract({
         abi: crossChainPoolAbi,
@@ -183,6 +203,9 @@ export default function DepositModal({
 
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
                                             dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
+                                            <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
+                                            dark:border-yellow-500 dark:text-slate-300">$ value of deposit: {usdLinkPrice ?
+                                                    formatEther(BigInt(usdLinkPrice / 1e8)).substring(0, 10) : 0}</span>
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">You get:    {lptInExchangeOfUnderlying as bigint ? formatEther(lptInExchangeOfUnderlying as bigint).substring(0, 15) : 0} {symbol as string} </span>
                                         </div>
                                     </div>

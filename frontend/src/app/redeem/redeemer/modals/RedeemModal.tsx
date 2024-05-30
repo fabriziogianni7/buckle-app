@@ -36,6 +36,10 @@ export default function RedeemModal({
         setAmount(0)
     }
 
+    // add: getCCipFeesForCooldown(uint256 _lptAmount)
+    // add: setCooldownForLp(uint256 _lptAmount) 
+    // add: getCooldown(address lp)
+
 
     const { data: amountsToRedeem } = useReadContract({
         abi: crossChainPoolAbi,
@@ -45,8 +49,25 @@ export default function RedeemModal({
             amount
         ]
     })
+    const { data: cooldownPeriod } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "getCooldown",
+        args: [
+            userAddress
+        ]
+    })
 
-    const { data: ccipFees } = useReadContract({
+    const { data: ccipFeesCooldown } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "getCCipFeesForCooldown",
+        args: [
+            amount
+        ]
+    })
+
+    const { data: ccipFeesTeleport } = useReadContract({
         abi: crossChainPoolAbi,
         address: poolAddress,
         functionName: "getCCipFeesForRedeem",
@@ -64,9 +85,24 @@ export default function RedeemModal({
 
 
 
+    const setCooldown = () => {
+        const abi = crossChainPoolAbi
+        if (poolAddress && ccipFeesCooldown) {
+            writeContract({
+                abi,
+                address: poolAddress,
+                functionName: "setCooldownForLp",
+                args: [
+                    amount
+                ],
+                value: ccipFeesTeleport as bigint
+            })
+            setPhase("redeem")
+        }
+    }
     const redeem = () => {
         const abi = crossChainPoolAbi
-        if (poolAddress && ccipFees) {
+        if (poolAddress && ccipFeesTeleport) {
             writeContract({
                 abi,
                 address: poolAddress,
@@ -75,7 +111,7 @@ export default function RedeemModal({
                     amount,
                     userAddress
                 ],
-                value: ccipFees as bigint
+                value: ccipFeesTeleport as bigint
             })
             setPhase("redeem")
         }
@@ -90,7 +126,6 @@ export default function RedeemModal({
     useEffect(() => {
         if (amountsToRedeem) {
             const [amountToRedeem1, amountToRedeem2] = amountsToRedeem as AmountsToRedeem;
-            console.log("amountsToRedeem", amountsToRedeem)
             setRedeemAmounts({
                 currentChain: formatEther(amountToRedeem1),
                 crosschain: formatEther(amountToRedeem2)
@@ -98,6 +133,17 @@ export default function RedeemModal({
 
         }
     }, [amountsToRedeem])
+
+    useEffect(() => {
+        console.log("cooldownPeriod", cooldownPeriod)
+    }, [cooldownPeriod])
+
+
+    // const methodNeeded = () => {
+    //     if (amount && cooldownPeriod)
+    //         return deposit()
+    //     return approve()
+    // }
 
 
 
@@ -161,7 +207,7 @@ export default function RedeemModal({
                                         <div className="flex flex-col space-y-3">
 
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
-                                            dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
+                                            dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFeesTeleport as bigint ? formatEther(ccipFeesTeleport as bigint).substring(0, 15) : 0} ETH</span>
                                             {/* <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: FREE</span> */}
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">current chain redeemal amount: {redeemAmounts?.currentChain} underlying tokens</span>
                                             <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-800/30 dark:text-teal-500">cross-chain redeemal amount: {redeemAmounts?.crosschain} underlying tokens</span>

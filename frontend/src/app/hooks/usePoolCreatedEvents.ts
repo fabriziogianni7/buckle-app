@@ -73,10 +73,6 @@ export default function usePoolCreatedEvents() {
 
     }, [latestBlock, chainId])
 
-    useEffect(() => {
-        // debugger
-        console.log("poolCreatedEvents", poolCreatedEvents)
-    }, [poolCreatedEvents])
 
 
     return { poolCreatedEvents }

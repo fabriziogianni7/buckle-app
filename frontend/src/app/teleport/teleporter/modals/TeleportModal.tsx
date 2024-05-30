@@ -1,7 +1,7 @@
 import { crossChainPoolAbi } from "@/app/abis/crossChainPoolAbi";
 import { ierc20Abi } from "@/app/abis/ierc20Abi";
 import CustomInput from "@/app/components/common/CustomInput";
-import { allowedChainSelectors, ccipSelectorsTochain } from "@/app/config/generalConfig";
+import { allowedChainSelectors, ccipSelectorsTochain, getChain } from "@/app/config/generalConfig";
 import useCurrentChainSelector from "@/app/hooks/useCurrentChainSelector";
 import { useEffect, useState } from "react";
 import { formatEther } from "viem";
@@ -29,7 +29,7 @@ export default function TeleportModal({
     const [phase, setPhase] = useState<"approve" | "teleport" | "success">()
     const { writeContract, error, context, data: hash, status, isPending } = useWriteContract()
     const { address: userAddress } = useAccount()
-    const { selector: currentSelector, chainId: currentChainId, chainName: currentChainName } = useCurrentChainSelector()
+    const { chainName: currentChainName } = useCurrentChainSelector()
 
 
     const resetState = () => {
@@ -51,7 +51,16 @@ export default function TeleportModal({
     const { data: ccipFees } = useReadContract({
         abi: crossChainPoolAbi,
         address: poolAddress,
-        functionName: "getCCipFeesForDeposit",
+        functionName: "getCcipFeesForTeleporting",
+        args: [
+            amountToBridge,
+            userAddress
+        ]
+    })
+    const { data: protocolFees } = useReadContract({
+        abi: crossChainPoolAbi,
+        address: poolAddress,
+        functionName: "calculateBuckleAppFees",
         args: [
             amountToBridge
         ]
@@ -123,6 +132,7 @@ export default function TeleportModal({
         return approve()
     }
 
+    // useEffect(() => console.log(error))
 
 
     return (
@@ -168,7 +178,9 @@ export default function TeleportModal({
 
                                                 <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-gray-800 text-gray-800 border-yellow-500
                                             dark:border-yellow-500 dark:text-slate-300">ccip fees: {ccipFees as bigint ? formatEther(ccipFees as bigint).substring(0, 15) : 0} ETH</span>
-                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees: 0.001 token</span>
+                                                <span className="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-teal-500 text-gray-800 dark:border-teal-500 dark:text-slate-300">protocol fees (5%): {
+                                                    protocolFees as bigint ? formatEther(protocolFees as bigint).substring(0, 15) : 0
+                                                } LINK</span>
                                             </div>
                                         </div>
                                     </div>
@@ -186,8 +198,8 @@ export default function TeleportModal({
                                     </div>
                                     <div className="ms-3 max-w-30">
                                         <article className="text-sm text-pretty break-all  text-gray-700 dark:text-neutral-400">
-                                            <h3>You successfully teleported your tokens to {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}.</h3>
-                                            <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/msg/${hash}`}>
+                                            <h3>You successfully teleported your tokens to {ccipSelectorsTochain[chainSelector as allowedChainSelectors]}. Please, wait for the crosschain tx to be processed.</h3>
+                                            <p className="text-sm text-blue-200 hover:text-green-200"><a href={`https://ccip.chain.link/tx/${hash}`} target="_blank">
                                                 {hash}
                                             </a>
                                             </p>

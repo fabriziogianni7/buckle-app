@@ -58,28 +58,25 @@ export default function useCrossChainPool() {
                 address: poolAddress,
                 functionName: "getCrossChainSenderAndSelector",
                 args: []
-            }]
+            },
+            {
+                abi: crossChainPoolAbi,
+                address: poolAddress,
+                functionName: "getTotalProtocolBalances",
+                args: []
+            },
+            {
+                abi: crossChainPoolAbi,
+                address: poolAddress,
+                functionName: "getCrossChainBalances",
+                args: []
+            }
+            ]
+
         }) as any,
 
     })
 
-    useEffect(() => {
-        console.log(data)
-    }, [data])
-    // useEffect(() => {
-    //     const x = poolAddresses?.map(poolAddress => {
-    //         return {
-    //             abi: crossChainPoolAbi,
-    //             address: poolAddress,
-    //             functionName: "calculateAmountToRedeem",
-    //             args: [
-    //                 1e18
-    //             ]
-    //         }
-
-    //     })
-    //     console.log(x)
-    // })
 
 
 

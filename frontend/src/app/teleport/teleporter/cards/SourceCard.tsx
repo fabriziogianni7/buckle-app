@@ -5,6 +5,7 @@ import useCurrentChainSelector from "@/app/hooks/useCurrentChainSelector";
 import { Pool } from "@/app/config/interfaces";
 import CustomInput from "@/app/components/common/CustomInput";
 import Image from 'next/image';
+import { addressesToIcons, addressesToNames, allowedTokens } from "@/app/config/generalConfig";
 
 
 interface CardProps {
@@ -43,13 +44,21 @@ export default function SourceCard({ title = "title", subtitle = "subtitle", poo
                     <p className="mt-2 text-gray-500 dark:text-neutral-400">
                         {subtitle}
                     </p>
+                    <br />
                     {/* for selecting chain */}
                     <select className="py-3 px-4 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
                         onChange={(e) => setTokenToBridge(e.target.value as `0x${string}`)}>
                         <option key={0} value={undefined}>Select Token To Bridge</option>
                         {
                             poolsAndTokens?.map((el, i) =>
-                                <option key={i + 1} value={el.tokenCurrentChain}>{el.tokenCurrentChain}</option>
+                                <option key={i + 1}
+                                    value={el.tokenCurrentChain}
+                                    style={{ background: `url(http://localhost:3000/${addressesToIcons[el?.tokenCurrentChain! as allowedTokens]})`, width: 10 }}
+                                >
+                                    {addressesToNames[el?.tokenCurrentChain! as allowedTokens]} | {
+                                        `${el?.tokenCurrentChain?.substring(0, 10)}...`
+                                    }
+                                </option>
 
 
                             )

@@ -1,6 +1,8 @@
 
 import { poolFactoryAbi } from "../abis/poolFactoryAbi";
+import * as all from "viem/chains";
 
+const { ...chains } = all;
 export enum Factories {
     SEPOLIA = 11155111,
     ARB_SEPOLIA = 421614,
@@ -99,6 +101,10 @@ enum TokensToIcon {
     LINK = "icons-buckle/tokens/link-icon.svg",
     USDC = "icons-buckle/tokens/usdc-icon.svg"
 }
+enum TokensToName {
+    LINK = "LINK",
+    USDC = "USDC"
+}
 enum NetworkIcons {
     ETHEREUM = "icons-buckle/chains/ethereum-icon.svg",
     ARBITRUM = "icons-buckle/chains/arbitrum-icon.svg",
@@ -114,6 +120,14 @@ export const addressesToIcons = {
     "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904": TokensToIcon.LINK,
     "0x779877A7B0D9E8603169DdbD7836e478b4624789": TokensToIcon.LINK,
 }
+export const addressesToNames = {
+    "0xDbb077Ddec08E8b574186098359d30556AF6797D": TokensToName.USDC,
+    "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357": TokensToName.USDC,
+    "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E": TokensToName.LINK,
+    "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846": TokensToName.LINK,
+    "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904": TokensToName.LINK,
+    "0x779877A7B0D9E8603169DdbD7836e478b4624789": TokensToName.LINK,
+}
 
 export const selectorsToIcons = {
     "16015286601757825753": NetworkIcons.ETHEREUM,
@@ -126,3 +140,13 @@ export const selectorsToIcons = {
 export const CCIP_EXPLORER_URL_ADDRESS = "https://ccip.chain.link/address/"
 export const CCIP_EXPLORER_URL_TX = "https://ccip.chain.link/tx/"
 
+
+export function getChain(chainId: number) {
+    for (const chain of Object.values(chains)) {
+        if (chain.id === chainId) {
+            return chain;
+        }
+    }
+
+    throw new Error(`Chain with id ${chainId} not found`);
+}
