@@ -23,6 +23,8 @@ ARB_SEPOLIA_CHAIN_ID:= 421614
 FUJI_CHAIN_ID:= 43113
 AMOY_CHAIN_ID:= 80002
 
+SENDER := ${${SENDER}}
+
 all: remove install build
 
 # Clean the repo
@@ -46,51 +48,43 @@ format :; forge fmt
 
 anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
 
-slither :; slither . --config-file slither.config.json --checklist 
-
-aderyn :; aderyn .
-
-scopefile :; @tree ./src/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { path[int((length($$0) - length($$2))/2)] = $$2; next } { p = "src"; for(i=2; i<=int((length($$0) - length($$2))/2); i++) if (path[i] != "") p = p "/" path[i]; print p "/" $$2; }' > scope.txt
-
-scope :; tree ./src/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/g; s/│/|/g'
-
-deploy-anvil:
+deploy-factory-anvil:
 	 @forge script script/DeployPoolFactory.s.sol --rpc-url ${ANVIL_URL} --broadcast --account anvilAcc
 
-## FROM SEPOLIA - link
+
 
   
 
 deploy-pool-arb-to-sepolia-ccip-bnm:
-	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "deploy(address,address,address,address,uint256,string)"  ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_CCIP_BNM} ${SEPOLIA_CCIP_BNM} ${SEPOLIA_CHAIN_ID} "LINKArbSepoliaSepolia"  --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvvv --sig "deploy(address,address,address,address,uint256,string)"  ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_CCIP_BNM} ${SEPOLIA_CCIP_BNM} ${SEPOLIA_CHAIN_ID} "LINKArbSepoliaSepolia"  --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 
 deploy-pool-arb-to-sepolia:
-	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "deploy(address,address,address,address,uint256,string)"  ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_LINK} ${SEPOLIA_LINK} ${SEPOLIA_CHAIN_ID} "LINKArbSepoliaSepolia"  --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvvv --sig "deploy(address,address,address,address,uint256,string)"  ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_LINK} ${SEPOLIA_LINK} ${SEPOLIA_CHAIN_ID} "LINKArbSepoliaSepolia"  --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 deploy-pool-sepolia-to-arb:
-	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_LINK} ${ARB_SEPOLIA_LINK} ${ARB_SEPOLIA_CHAIN_ID} "LINKSepoliArbSepolia" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_LINK} ${ARB_SEPOLIA_LINK} ${ARB_SEPOLIA_CHAIN_ID} "LINKSepoliArbSepolia" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 deploy-pool-sepolia-to-fuji:	
-	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY}  ${FUJI_FACTORY} ${SEPOLIA_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKSepoliaFuji" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY}  ${FUJI_FACTORY} ${SEPOLIA_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKSepoliaFuji" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 deploy-pool-fuji-to-arbitrum:	
-	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${FUJI_C_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${FUJI_FACTORY} ${ARB_SEPOLIA_FACTORY}    ${FUJI_LINK} ${ARB_SEPOLIA_LINK} ${ARB_SEPOLIA_CHAIN_ID} "LINKArbSepoliaFuji" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${FUJI_C_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${FUJI_FACTORY} ${ARB_SEPOLIA_FACTORY}    ${FUJI_LINK} ${ARB_SEPOLIA_LINK} ${ARB_SEPOLIA_CHAIN_ID} "LINKArbSepoliaFuji" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 
 deploy-pool-sepolia-to-amoy:
-	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY}  ${AMOY_FACTORY} ${SEPOLIA_LINK} ${AMOY_LINK} ${AMOY_CHAIN_ID} "LINKSepoliaAmoy" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${SEPOLIA_FACTORY}  ${AMOY_FACTORY} ${SEPOLIA_LINK} ${AMOY_LINK} ${AMOY_CHAIN_ID} "LINKSepoliaAmoy" --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 #### FROM arbitrumsepolia
 
 deploy-pool-arbsepolia-to-fuji:
-	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${ARB_SEPOLIA_FACTORY} ${FUJI_FACTORY} ${ARB_SEPOLIA_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKArbSepoliaFuji" -vvvv --verify --etherscan-api-key verifyContract 
+	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${ARB_SEPOLIA_FACTORY} ${FUJI_FACTORY} ${ARB_SEPOLIA_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKArbSepoliaFuji" -vvvv --verify --etherscan-api-key verifyContract 
 
 deploy-pool-amoy-to-sepolia:
-	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${AMOY_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${AMOY_FACTORY} ${SEPOLIA_FACTORY}   ${AMOY_LINK} ${SEPOLIA_LINK} ${SEPOLIA_CHAIN_ID} "LINKAmoyArbSepolia" 
+	@forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${AMOY_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${AMOY_FACTORY} ${SEPOLIA_FACTORY}   ${AMOY_LINK} ${SEPOLIA_LINK} ${SEPOLIA_CHAIN_ID} "LINKAmoyArbSepolia" 
 
 deploy-pool-amoy-to-fuji:
-	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${AMOY_FACTORY} ${FUJI_FACTORY} ${AMOY_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKAmoyFuji" --verify --etherscan-api-key $(AMOYSCAN_API_KEY) -vvvvv 
+	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint256,string)" ${AMOY_FACTORY} ${FUJI_FACTORY} ${AMOY_LINK} ${FUJI_LINK} ${FUJI_CHAIN_ID} "LINKAmoyFuji" --verify --etherscan-api-key $(AMOYSCAN_API_KEY) -vvvvv 
 
 
 
@@ -100,22 +94,22 @@ deploy-pool-amoy-to-fuji:
 
 
 deploy-pool-from-factory-arbitrum-to-fuji:
-	@forge script script/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv --sig "deploy(address,address,address,address,uint64,string)" 0xa460Ec0F081f5F89F0420f2cb9A93760537ef7A5 0x54cCEe7e1eE9Aab153Da18b447a50D8282e1506F 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846 14767482510784806043 "LINK_ARB_FUJI" 
+	@forge script script/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvv --sig "deploy(address,address,address,address,uint64,string)" 0xa460Ec0F081f5F89F0420f2cb9A93760537ef7A5 0x54cCEe7e1eE9Aab153Da18b447a50D8282e1506F 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846 14767482510784806043 "LINK_ARB_FUJI" 
 
 
 # Deploy factories on testnets
 
 deploy-factory-sepolia:
-	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
+	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 deploy-factory-arbitrum:
-	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e --verify --etherscan-api-key $(ARBISCAN_API_KEY) -vvvv
+	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} --verify --etherscan-api-key $(ARBISCAN_API_KEY) -vvvv
 
 deploy-factory-fuji:
-	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${FUJI_C_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e  -vvvv --verify --etherscan-api-key verifyContract --legacy
+	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${FUJI_C_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER}  -vvvv --verify --etherscan-api-key verifyContract --legacy
 
 deploy-factory-amoy:
-	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${AMOY_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e  -vvvv --verify --etherscan-api-key $(AMOYSCAN_API_KEY) --legacy
+	@forge script script/deploy/DeployPoolFactory.s.sol --rpc-url ${AMOY_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER}  -vvvv --verify --etherscan-api-key $(AMOYSCAN_API_KEY) --legacy
 
 # command on forked networks
 # using local forked network url
@@ -125,19 +119,19 @@ fork-arbitrum:
 	anvil --fork-url ${ARBITRUM_SEPOLIA_RPC_URL} --port 8546
 
 deploy-sepolia-forked:
-	@forge script script/DeployPoolFactory.s.sol --rpc-url 127.0.0.1:8545 --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv
+	@forge script script/DeployPoolFactory.s.sol --rpc-url 127.0.0.1:8545 --broadcast --account deployer --${SENDER} ${SENDER} -vvvv
 
 deploy-arbitrum-forked:
-	@forge script script/DeployPoolFactory.s.sol --rpc-url 127.0.0.1:8546 --broadcast --account arbDeployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvv
+	@forge script script/DeployPoolFactory.s.sol --rpc-url 127.0.0.1:8546 --broadcast --account arbDeployer --${SENDER} ${SENDER} -vvvv
 
 
 
 # change the address of the factory
 withdraw-link-sepolia:
-	@forge script script/RedeemLink.s.sol:RedeemLink  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "redeem(address)" 0x40ed5256EC8E69D2E9bc4781c27e5b833589Dc0f
+	@forge script script/RedeemLink.s.sol:RedeemLink  --rpc-url ${ETHEREUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvvv --sig "redeem(address)" 0x40ed5256EC8E69D2E9bc4781c27e5b833589Dc0f
 
 withdraw-link-arbitrum:
-	@forge script script/RedeemLink.s.sol:RedeemLink  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "redeem(address)" 0xecA742215f77db3723056d1cAD9F09D06F37F129
+	@forge script script/RedeemLink.s.sol:RedeemLink  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --${SENDER} ${SENDER} -vvvvv --sig "redeem(address)" 0xecA742215f77db3723056d1cAD9F09D06F37F129
 
 
 # factory verification (modify arguments)
