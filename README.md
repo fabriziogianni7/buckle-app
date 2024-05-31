@@ -86,6 +86,7 @@ _click on the address to see them verified on block explorers_
 
 *LINK pool amoy <-> sepolia*: [0x17ecec2ab5977077d4c66f51fa7053b991e97fc4](https://amoy.polygonscan.com/address/0x17ecec2ab5977077d4c66f51fa7053b991e97fc4) <-> [0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D](https://sepolia.arbiscan.io/address/0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D)
 
+*CCIP-bnm pool arb <-> sepolia*: [0x28f7c1e6a8f56729cb1d541ff6ddd934636343bf](https://sepolia.arbiscan.io/address/0x28f7c1e6a8f56729cb1d541ff6ddd934636343bf) <-> [0xa58cc0bA6ab6f680ef61121702B4405563211213](https://sepolia.etherscan.io/address/0xa58cc0bA6ab6f680ef61121702B4405563211213)
 
 ## How To Use It 
 
