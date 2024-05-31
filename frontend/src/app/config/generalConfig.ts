@@ -17,7 +17,7 @@ export const poolMapping = {
     11155111: {
         factory: process.env.NEXT_PUBLIC_SEPOLIA_FACTORY as `0x${string}`, // should be put somewhere else maybe
         tokens: {
-            usdc: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357" as `0x${string}`,
+            ccipBnM: "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05" as `0x${string}`,
             link: "0x779877A7B0D9E8603169DdbD7836e478b4624789" as `0x${string}`,
         },
         chainSelector: 16015286601757825753n,
@@ -27,7 +27,7 @@ export const poolMapping = {
     421614: {
         factory: process.env.NEXT_PUBLIC_ARB_SEPOLIA_FACTORY as `0x${string}`, // should be put somewhere else maybe
         tokens: {
-            usdc: "0xDbb077Ddec08E8b574186098359d30556AF6797D" as `0x${string}`,// this is another token I have in my wallet
+            ccipBnM: "0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D" as `0x${string}`,// this is another token I have in my wallet
             link: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E" as `0x${string}`,// this is another token I have in my wallet
 
         },
@@ -94,16 +94,20 @@ export type allowedTokens =
     "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E" |
     "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846" |
     "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904" |
-    "0x779877A7B0D9E8603169DdbD7836e478b4624789"
+    "0x779877A7B0D9E8603169DdbD7836e478b4624789" |
+    "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05" |
+    "0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D"
 
 
 enum TokensToIcon {
     LINK = "icons-buckle/tokens/link-icon.svg",
-    USDC = "icons-buckle/tokens/usdc-icon.svg"
+    USDC = "icons-buckle/tokens/usdc-icon.svg",
+    CCIP_BNM = "icons-buckle/tokens/ccip-bnm.svg"
 }
 enum TokensToName {
     LINK = "LINK",
-    USDC = "USDC"
+    USDC = "USDC",
+    CCIP_BNM = "CCIP_BNM"
 }
 enum NetworkIcons {
     ETHEREUM = "icons-buckle/chains/ethereum-icon.svg",
@@ -119,6 +123,8 @@ export const addressesToIcons = {
     "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846": TokensToIcon.LINK,
     "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904": TokensToIcon.LINK,
     "0x779877A7B0D9E8603169DdbD7836e478b4624789": TokensToIcon.LINK,
+    "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05": TokensToIcon.CCIP_BNM,
+    "0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D": TokensToIcon.CCIP_BNM,
 }
 export const addressesToNames = {
     "0xDbb077Ddec08E8b574186098359d30556AF6797D": TokensToName.USDC,
@@ -127,6 +133,8 @@ export const addressesToNames = {
     "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846": TokensToName.LINK,
     "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904": TokensToName.LINK,
     "0x779877A7B0D9E8603169DdbD7836e478b4624789": TokensToName.LINK,
+    "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05": TokensToName.CCIP_BNM,
+    "0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D": TokensToName.CCIP_BNM,
 }
 
 export const selectorsToIcons = {
