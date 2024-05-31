@@ -72,3 +72,9 @@ The factory uses `CREATE2` opcode to create the new pool and to [compute the add
 
 *LINK pool amoy <-> sepolia*: [0x17ecec2ab5977077d4c66f51fa7053b991e97fc4](https://amoy.polygonscan.com/address/0x17ecec2ab5977077d4c66f51fa7053b991e97fc4) <-> [0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D](https://sepolia.arbiscan.io/address/0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D)
 
+
+## How To Use It 
+run `git clone https://github.com/fabriziogianni7/buckle-app.git` to clone the app locally
+
+
+
