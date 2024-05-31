@@ -74,7 +74,51 @@ The factory uses `CREATE2` opcode to create the new pool and to [compute the add
 
 
 ## How To Use It 
-run `git clone https://github.com/fabriziogianni7/buckle-app.git` to clone the app locally
+
+### Clone and build:
+```bash
+git clone https://github.com/fabriziogianni7/buckle-app.git
+make install
+make build
+```
+
+### Run Tests
+```bash
+make test
+```
+
+### Run The Frontend Locally
+
+```bash
+cd frontend
+yarn && yarn dev
+```
+
+### Deploy Pool Pairs 
+These commands deploy pools to exchange LINK cross chain (except for deploy-pool-arb-to-sepolia-ccip-bnm which will deploy pools for bridging ccip-bnm tokens)
+
+#### Import a wallet
+```bash
+cast wallet import <name of account> --interactive
+*** put your pwd***
+// now your pk is secure in a keystore
+```
+
+#### Deploy Pools
+```bash
+make deploy-pool-arb-to-sepolia-ccip-bnm
+make deploy-pool-arb-to-sepolia
+make deploy-pool-sepolia-to-arb
+make deploy-pool-sepolia-to-fuji
+make deploy-pool-fuji-to-arbitrum
+make deploy-pool-sepolia-to-amoy
+make deploy-pool-arbsepolia-to-fuji
+make deploy-pool-amoy-to-sepolia
+make deploy-pool-amoy-to-fuji
+make deploy-pool-from-factory-arbitrum-to-fuji
+```
+
+
 
 
 
