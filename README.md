@@ -3,7 +3,7 @@
 ## Summary
 
 1. [Introduction](#introduction)
-2. [Building in Public - Live Streaming Development](#building-in-public-live-streaming-development)
+2. [Live Streaming Development](#live-streaming-development)
 3. [What is Buckle App](#what-is-buckle-app)
 4. [Protocol Risks](#protocol-risks)
 5. [How does it Work](#how-does-it-work)
@@ -22,7 +22,7 @@ Users can bridge (and in the future swap) tokens without minting/burning tokens 
 
 _Buckle App...._
 
-## Building in Public - Live Streaming Development
+## Live Streaming Development
 
 I live streamed on Youtube the development of Buckle. Every day, I was live designing, coding, testing the project until I completed it.
 
