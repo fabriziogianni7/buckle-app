@@ -6,7 +6,7 @@
 2. [Live Streaming Development](#live-streaming-development)
 3. [What is Buckle App](#what-is-buckle-app)
 4. [Protocol Risks](#protocol-risks)
-5. [How does it Work](#how-does-it-work)
+5. [How does it Work](#how-does-it-work-(-click-on-highlighted-words-to-go-to-the-code))
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
 
