@@ -6,7 +6,7 @@
 2. [Live Streaming Development](#live-streaming-development)
 3. [What is Buckle App](#what-is-buckle-app)
 4. [Protocol Risks](#protocol-risks)
-5. [How does it Work](#how-does-it-work-(-click-on-highlighted-words-to-go-to-the-code))
+5. [How does it Work](#how-does-it-work)
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
 
@@ -50,7 +50,8 @@ Buckle App is a trustless, automated atomic swap protocol, based on pools. There
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 | Rug pull Risk   | Low           | LPs need to submit for a period of cooldown before removing liquidity, so the users that are bridging wont be rug-pulled|
 
-## How does it Work (click on highlighted words to go to the code)
+## How does it Work 
+_click on highlighted words to go to the code_
 Buckle Is a protocol composed essentially by 2 smart contracts:
 **CrossChainPool** and **PoolFactory**.
 
