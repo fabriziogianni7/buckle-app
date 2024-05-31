@@ -30,9 +30,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
-import {Client} from "ccip/contracts/libraries/Client.sol";
-import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
+import {CCIPReceiver} from "ccip/contracts/ccip/applications/CCIPReceiver.sol";
+import {Client} from "ccip/contracts/ccip/libraries/Client.sol";
+import {IRouterClient} from "ccip/contracts/ccip/interfaces/IRouterClient.sol";
 
 /**
  * @notice

@@ -24,11 +24,11 @@
 pragma solidity ^0.8.25;
 
 // import {Script, console2} from "forge-std/Script.sol";
-import {CCIPReceiver} from "ccip/contracts/applications/CCIPReceiver.sol";
-import {Client} from "ccip/contracts/libraries/Client.sol";
-import {IRouterClient} from "ccip/contracts/interfaces/IRouterClient.sol";
+import {CCIPReceiver} from "ccip/contracts/ccip/applications/CCIPReceiver.sol";
+import {Client} from "ccip/contracts/ccip/libraries/Client.sol";
+import {IRouterClient} from "ccip/contracts/ccip/interfaces/IRouterClient.sol";
 
-import {AggregatorV3Interface} from "@chainlink/contracts/shared/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "ccip/contracts/shared/interfaces/AggregatorV3Interface.sol";
 // import {VRFV2PlusWrapperConsumerBase} from "@chainlink/contracts/vrf/dev/VRFV2PlusWrapperConsumerBase.sol";
 // import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
 

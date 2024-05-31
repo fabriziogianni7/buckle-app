@@ -6,9 +6,9 @@ libs = ["lib"]
 remappings = [
     '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts/',
     'forge-std/=lib/forge-std/src/',
-    'ccip/contracts/=lib/ccip/contracts/src/v0.8/ccip',
+    'ccip/contracts/=lib/ccip/contracts/src/v0.8/',
     '@chainlink/local/=lib/chainlink-local/',
-    '@chainlink/contracts/=lib/chainlink/contracts/src/v0.8/'
+
 ]
 
 [rpc_endpoints]

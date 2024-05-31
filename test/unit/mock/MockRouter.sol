@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Client} from "ccip/contracts/libraries/Client.sol";
+import {Client} from "ccip/contracts/ccip/libraries/Client.sol";
 
 contract MockRouter {
     error OnlyOffRamp();
