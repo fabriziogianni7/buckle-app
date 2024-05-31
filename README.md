@@ -40,7 +40,7 @@ Buckle App is a trustless, automated atomic swap protocol, based on pools. There
 
 ## How does it Works (click on highlighted words to go to the code)
 Buckle Is a protocol composed essentially by 2 smart contracts:
-CrossChainPool and PoolFactory.
+**CrossChainPool** and **PoolFactory**.
 
 - [CrossChainPool](https://github.com/fabriziogianni7/buckle-app/blob/main/src/CrossChainPool.sol)
 This is the contract that allow users to [teleport](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L334) tokens and LPs to [deposit](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L253C14-L253C21) tokens and [earn fees](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L282). *Each CrossChainPool is deployed and connected in pair with another pool on another chain*. the 2 pools can move 1 token from chain A to chain B.
