@@ -15,6 +15,8 @@ FUJI_LINK := 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846
 ARB_SEPOLIA_LINK := 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E
 AMOY_LINK := 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904
 
+ARB_SEPOLIA_CCIP_BNM := 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D
+SEPOLIA_CCIP_BNM := 0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05
 
 SEPOLIA_CHAIN_ID:= 11155111
 ARB_SEPOLIA_CHAIN_ID:= 421614
@@ -27,9 +29,9 @@ all: remove install build
 clean  :; forge clean
 
 # Remove modules
-# remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
+remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
 
-# install :; forge install foundry-rs/forge-std --no-commit && forge install openzeppelin/openzeppelin-contracts --no-commit
+install :; forge install foundry-rs/forge-std --no-commit && forge install openzeppelin/openzeppelin-contracts --no-commit && forge install smartcontractkit/chainlink-local  --no-commit && forge install smartcontractkit/ccip  --no-commit
 
 # Update Dependencies
 update:; forge update
@@ -57,6 +59,10 @@ deploy-anvil:
 
 ## FROM SEPOLIA - link
 
+  
+
+deploy-pool-arb-to-sepolia-ccip-bnm:
+	forge script script/deploy/DeployPoolFromFactory.s.sol  --rpc-url ${ARBITRUM_SEPOLIA_RPC_URL} --broadcast --account deployer --sender 0x1C9E05B29134233e19fbd0FE27400F5FFFc3737e -vvvvv --sig "deploy(address,address,address,address,uint256,string)"  ${ARB_SEPOLIA_FACTORY} ${SEPOLIA_FACTORY} ${ARB_SEPOLIA_CCIP_BNM} ${SEPOLIA_CCIP_BNM} ${SEPOLIA_CHAIN_ID} "LINKArbSepoliaSepolia"  --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv --legacy
 
 
 deploy-pool-arb-to-sepolia:
