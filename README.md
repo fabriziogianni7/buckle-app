@@ -1,5 +1,17 @@
 # Buckle App!
 
+## Summary
+
+1. [Introduction](#introduction)
+2. [Live Streaming Development](#live-streaming-development)
+3. [What is Buckle App](#what-is-buckle-app)
+4. [Protocol Risks](#protocol-risks)
+5. [How does it Work](#how-does-it-work)
+6. [Contract Addresses](#contract-addresses)
+7. [How To Use It](#how-to-use-it)
+
+## Introduction
+
 Live app --> https://buckle-app.vercel.app/
 
 ------------------------------
@@ -10,7 +22,7 @@ Users can bridge (and in the future swap) tokens without minting/burning tokens 
 
 _Buckle App...._
 
-## Building in Public - Live Streaming Development
+## Live Streaming Development
 
 I live streamed on Youtube the development of Buckle. Every day, I was live designing, coding, testing the project until I completed it.
 
@@ -38,7 +50,8 @@ Buckle App is a trustless, automated atomic swap protocol, based on pools. There
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 | Rug pull Risk   | Low           | LPs need to submit for a period of cooldown before removing liquidity, so the users that are bridging wont be rug-pulled|
 
-## How does it Works (click on highlighted words to go to the code)
+## How does it Work 
+_click on highlighted words to go to the code_
 Buckle Is a protocol composed essentially by 2 smart contracts:
 **CrossChainPool** and **PoolFactory**.
 
@@ -54,7 +67,8 @@ This contract [deploys a pool pair with 1 transaction](https://github.com/fabriz
 The factory uses `CREATE2` opcode to create the new pool and to [compute the address of the pool that will be deployed on chain B](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L142); then, it set it as allowed sender on the pool on chain A. when the message lands on chain B, the [receive function](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L303) set the address of the deployed pool on chain A as allowed sender and actually deploy the pool we computed the address for on chain A 🥳.
 
 
-## Contract Addresses (click on the address to see them verified on block explorers)
+## Contract Addresses 
+_click on the address to see them verified on block explorers_
 
 ### Factories 
 *Sepolia*: [0x01fdc7db792220246a7eb669a8f7b7cd79c3e870](https://sepolia.etherscan.io/address/0x01fdc7db792220246a7eb669a8f7b7cd79c3e870) 
@@ -72,9 +86,57 @@ The factory uses `CREATE2` opcode to create the new pool and to [compute the add
 
 *LINK pool amoy <-> sepolia*: [0x17ecec2ab5977077d4c66f51fa7053b991e97fc4](https://amoy.polygonscan.com/address/0x17ecec2ab5977077d4c66f51fa7053b991e97fc4) <-> [0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D](https://sepolia.arbiscan.io/address/0x4F3C6EF211f54B72DB1189F1339B31AD033B4F3D)
 
+*CCIP-bnm pool arb <-> sepolia*: [0x28f7c1e6a8f56729cb1d541ff6ddd934636343bf](https://sepolia.arbiscan.io/address/0x28f7c1e6a8f56729cb1d541ff6ddd934636343bf) <-> [0xa58cc0bA6ab6f680ef61121702B4405563211213](https://sepolia.etherscan.io/address/0xa58cc0bA6ab6f680ef61121702B4405563211213)
 
 ## How To Use It 
-run `git clone https://github.com/fabriziogianni7/buckle-app.git` to clone the app locally
+
+### Clone and build:
+```bash
+git clone https://github.com/fabriziogianni7/buckle-app.git
+make install
+make build
+```
+
+### Run Tests
+```bash
+make test
+```
+
+### Run The Frontend Locally
+
+```bash
+cd frontend
+yarn && yarn dev
+```
+
+### Deploy Pool Pairs 
+These commands deploy pools to exchange LINK cross chain (except for deploy-pool-arb-to-sepolia-ccip-bnm which will deploy pools for bridging ccip-bnm tokens)
+
+#### Import a wallet
+```bash
+cast wallet import <name of account> --interactive
+*** put your pwd***
+// now your pk is secure in a keystore
+```
+
+#### Deploy Pools
+
+_Be sure to have sent some LINK to the factory of the source chain_
+
+```bash
+make deploy-pool-arb-to-sepolia-ccip-bnm
+make deploy-pool-arb-to-sepolia
+make deploy-pool-sepolia-to-arb
+make deploy-pool-sepolia-to-fuji
+make deploy-pool-fuji-to-arbitrum
+make deploy-pool-sepolia-to-amoy
+make deploy-pool-arbsepolia-to-fuji
+make deploy-pool-amoy-to-sepolia
+make deploy-pool-amoy-to-fuji
+make deploy-pool-from-factory-arbitrum-to-fuji
+```
+
+
 
 
 
