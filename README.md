@@ -67,7 +67,8 @@ This contract [deploys a pool pair with 1 transaction](https://github.com/fabriz
 The factory uses `CREATE2` opcode to create the new pool and to [compute the address of the pool that will be deployed on chain B](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L142); then, it set it as allowed sender on the pool on chain A. when the message lands on chain B, the [receive function](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L303) set the address of the deployed pool on chain A as allowed sender and actually deploy the pool we computed the address for on chain A 🥳.
 
 
-## Contract Addresses (click on the address to see them verified on block explorers)
+## Contract Addresses 
+_click on the address to see them verified on block explorers_
 
 ### Factories 
 *Sepolia*: [0x01fdc7db792220246a7eb669a8f7b7cd79c3e870](https://sepolia.etherscan.io/address/0x01fdc7db792220246a7eb669a8f7b7cd79c3e870) 
