@@ -1,5 +1,17 @@
 # Buckle App!
 
+## Summary
+
+1. [Introduction](#introduction)
+2. [Building in Public - Live Streaming Development](#building-in-public-live-streaming-development)
+3. [What is Buckle App](#what-is-buckle-app)
+4. [Protocol Risks](#protocol-risks)
+5. [How does it Work](#how-does-it-work)
+6. [Contract Addresses](#contract-addresses)
+7. [How To Use It](#how-to-use-it)
+
+## Introduction
+
 Live app --> https://buckle-app.vercel.app/
 
 ------------------------------
@@ -38,7 +50,7 @@ Buckle App is a trustless, automated atomic swap protocol, based on pools. There
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 | Rug pull Risk   | Low           | LPs need to submit for a period of cooldown before removing liquidity, so the users that are bridging wont be rug-pulled|
 
-## How does it Works (click on highlighted words to go to the code)
+## How does it Work (click on highlighted words to go to the code)
 Buckle Is a protocol composed essentially by 2 smart contracts:
 **CrossChainPool** and **PoolFactory**.
 
@@ -105,6 +117,9 @@ cast wallet import <name of account> --interactive
 ```
 
 #### Deploy Pools
+
+_Be sure to have sent some LINK to the factory of the source chain_
+
 ```bash
 make deploy-pool-arb-to-sepolia-ccip-bnm
 make deploy-pool-arb-to-sepolia
