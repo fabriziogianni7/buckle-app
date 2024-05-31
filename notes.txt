@@ -344,3 +344,37 @@ ccip receive deploy pool
 better for gas!!!!!!
 
 - refactored tests!
+
+
+
+remaining things todo:
+
+- why cant get events of amoy and fuji ? ✅ --> can read only 2048 block per time
+- improve frontend
+  - txs not showing in offcanvas ✅
+  - latest tx not showing for fuji ✅
+    - teleport
+      - apparently, teleport does not work ✅
+      - "select token to bridge should have logo and token name" ✅
+      - in starting network card, add the name of the starting network ✅
+  - show how much lpt token I get back in deposit modal ✅
+  - show protocol fees in teleport modal ✅
+  - add button to add the token to the wallet
+  - redeem not showing (maybe same reason of txs missing) ✅
+
+  - implement cooldown in redeeming --> there is a lil bug. I wont' implement it
+  - button of modals is not that great (always wrong)
+    - deposit modal
+    - teleport modal
+    - stake
+      - need to get the total liquidity of each pool
+      - add the price of link tru the getter
+  - offcanvas need to show what I deposited and what I teleported --> teleport not working
+
+- video demo: make some cut of all the starting videos of my live streaming
+- create another contract (chainlink automation) to check the liquidity level of the pools
+- submit project 
+- verify contracts
+
+
+requested
