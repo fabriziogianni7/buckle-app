@@ -9,6 +9,7 @@
 5. [How does it Work](#how-does-it-work)
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
+8. [Evidendces for hackathon judges and sponsor prices 🔍](evidendces-for-hackathon-judges-and-sponsor-price-🔍)
 
 ## Introduction
 
@@ -135,6 +136,24 @@ make deploy-pool-amoy-to-sepolia
 make deploy-pool-amoy-to-fuji
 make deploy-pool-from-factory-arbitrum-to-fuji
 ```
+
+## Evidendces for hackathon judges and sponsor prices 🔍
+### Chainlink:
+Ccip usage: using ccip to send messages cross chains, in specific, the protocol send message to make:- teleports, deposit, redeemals and to deploy simultaneusly 2 pools crosschain
+code:
+[teleport function](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L334) 
+[deposit function ](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L253C14-L253C21) [redeem function](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/CrossChainPool.sol#L282)
+[deploys a pool pair with 1 transaction](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L122)
+
+### Sponsor price: Polygon
+I deployed contracts in Polygon Amoy and I'm using them in the frontend.
+- Factory: *Polygon Amoy*: [0xdbb077ddec08e8b574186098359d30556af6797d](https://amoy.polygonscan.com/address/0xdbb077ddec08e8b574186098359d30556af6797d) 
+- Pools: [0x17ecec2ab5977077d4c66f51fa7053b991e97fc4](https://amoy.polygonscan.com/address/0x17ecec2ab5977077d4c66f51fa7053b991e97fc4)
+
+### Sponsor price: Avalanche
+I deployed contracts in Avalanche Fuji-c and I'm using them in the frontend.
+Factory: [0x9c0a2c95646e32a764858fa95e30b7bd4d29cac2](https://testnet.snowtrace.io/address/0x9c0a2c95646e32a764858fa95e30b7bd4d29cac2) 
+Pools: [0x2Edde7A4f7A5d684CcE3c98D25A2F92042ef6C32](https://testnet.snowtrace.io/token/0x2Edde7A4f7A5d684CcE3c98D25A2F92042ef6C32?chainId=43113)
 
 
 
