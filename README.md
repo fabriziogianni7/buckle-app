@@ -4,12 +4,12 @@
 
 1. [Introduction](#introduction)
 2. [Live Streaming Development](#live-streaming-development)
-3. [What is Buckle App](#what-is-buckle-app)
+3. [What Is Buckle App](#what-is-buckle-app)
 4. [Protocol Risks](#protocol-risks)
-5. [How does it Work](#how-does-it-work)
+5. [How Does it Work](#how-does-it-work)
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
-8. [Evidendces for hackathon judges and sponsor prices](#evidendces-for-hackathon-judges-and-sponsor-prices)
+8. [Evidendces For Hackathon Judges And Sponsor Prices](#evidendces-for-hackathon-judges-and-sponsor-prices)
 
 ## Introduction
 
@@ -29,7 +29,7 @@ I live streamed on Youtube the development of Buckle. Every day, I was live desi
 
 🥷🏻 follow me on [youtube](https://www.youtube.com/@fabriziogianni7) and [here you'll find the playlist](https://www.youtube.com/watch?v=iOLuLBu_egI&list=PLRWSSe23vY_tiReJzSOfDxgljIrnf0Lkk) of the live streaming.
 
-## What is Buckle App
+## What Is Buckle App
 
 **Buckle** is a trustless cross chain bridge protocol operating with Chainlink ccip. It's inspired by the model of [atomic swaps](https://chain.link/education-hub/atomic-swaps), but it's much more.
 
@@ -51,7 +51,7 @@ Buckle App is a trustless, automated atomic swap protocol, based on pools. There
 | Liquidity Risk  | Not Dangerous | If there's no liquidity, users can't bridge                                     |
 | Rug pull Risk   | Low           | LPs need to submit for a period of cooldown before removing liquidity, so the users that are bridging wont be rug-pulled|
 
-## How does it Work 
+## How Does it Work 
 _click on highlighted words to go to the code_
 Buckle Is a protocol composed essentially by 2 smart contracts:
 **CrossChainPool** and **PoolFactory**.
@@ -137,7 +137,7 @@ make deploy-pool-amoy-to-fuji
 make deploy-pool-from-factory-arbitrum-to-fuji
 ```
 
-## Evidendces for hackathon judges and sponsor prices
+## Evidendces For Hackathon Judges And Sponsor Prices
 ### Chainlink:
 Ccip usage: using ccip to send messages cross chains, in specific, the protocol send message to make:- teleports, deposit, redeemals and to deploy simultaneusly 2 pools crosschain
 code:
