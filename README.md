@@ -65,6 +65,7 @@ Users pay ccip fees in native currency.
 
 - [PoolFactory](https://github.com/fabriziogianni7/buckle-app/blob/main/src/PoolFactory.sol)
 This contract [deploys a pool pair with 1 transaction](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L122). It uses a ccip message to do that.
+_The factory will send a message to another factory on another chain, which will deploy a new pool._
 The factory uses `CREATE2` opcode to create the new pool and to [compute the address of the pool that will be deployed on chain B](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L142); then, it set it as allowed sender on the pool on chain A. when the message lands on chain B, the [receive function](https://github.com/fabriziogianni7/buckle-app/blob/197c1d1b2b2c32b95996618fea4abe2bf0b40121/src/PoolFactory.sol#L303) set the address of the deployed pool on chain A as allowed sender and actually deploy the pool we computed the address for on chain A 🥳.
 
 
