@@ -9,7 +9,7 @@
 5. [How does it Work](#how-does-it-work)
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
-8. [Evidendces for hackathon judges and sponsor prices](evidendces-for-hackathon-judges-and-sponsor-prices)
+8. [Evidendces for hackathon judges and sponsor prices](#evidendces-for-hackathon-judges-and-sponsor-prices)
 
 ## Introduction
 
