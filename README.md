@@ -9,7 +9,7 @@
 5. [How does it Work](#how-does-it-work)
 6. [Contract Addresses](#contract-addresses)
 7. [How To Use It](#how-to-use-it)
-8. [Evidendces for hackathon judges and sponsor prices 🔍](evidendces-for-hackathon-judges-and-sponsor-price-🔍)
+8. [Evidendces for hackathon judges and sponsor prices](evidendces-for-hackathon-judges-and-sponsor-price)
 
 ## Introduction
 
@@ -137,7 +137,7 @@ make deploy-pool-amoy-to-fuji
 make deploy-pool-from-factory-arbitrum-to-fuji
 ```
 
-## Evidendces for hackathon judges and sponsor prices 🔍
+## Evidendces for hackathon judges and sponsor prices
 ### Chainlink:
 Ccip usage: using ccip to send messages cross chains, in specific, the protocol send message to make:- teleports, deposit, redeemals and to deploy simultaneusly 2 pools crosschain
 code:
