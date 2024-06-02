@@ -16,14 +16,43 @@ export default function useCrossChainPool() {
     const chainId = useChainId() as allowedChainids
     const { address: userAddress } = useAccount()
     const [allPools, setAllpools] = useState<(`0x${string}` | undefined)[] | undefined>()
-    const [userDeposits, setUserDeposits] = useState<UserDeposit[] | undefined>()
+    const [balanceList, setBalanceList] = useState<any>()
 
     const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
 
     useEffect(() => {
         if (poolCreatedEvents)
-            setAllpools(poolCreatedEvents?.map((l: any) => l?.args?.pool))
+            console.log("ok")
+        setAllpools(poolCreatedEvents?.map((l: any) => l?.args?.pool))
     }, [poolCreatedEvents])
+
+
+    const { data: balances } = useReadContracts({
+        contracts: allPools?.flatMap(poolAddress => {
+            return [{
+                abi: crossChainPoolAbi,
+                address: poolAddress,
+                functionName: "getTotalProtocolBalances"
+            }]
+
+        }) as any,
+
+    })
+
+    useEffect(() => {
+        if (balances && allPools) {
+            const newArr = allPools.map((poolAddress: any, index: number) => {
+                const result = balances[index]?.result as any
+                return {
+                    poolAddress,
+                    balance: result[0] as any
+                }
+            })
+            setBalanceList(newArr)
+        }
+    }, [balances])
+
+
 
 
 
@@ -43,43 +72,11 @@ export default function useCrossChainPool() {
     // getRedeemValueForLP(uint256 _lptAmount)
     // getGasLimitValues()
 
-    const { data } = useReadContracts({
-        contracts: allPools?.flatMap(poolAddress => {
-            return [{
-                abi: crossChainPoolAbi,
-                address: poolAddress,
-                functionName: "calculateAmountToRedeem",
-                args: [
-                    1e18
-                ]
-            },
-            {
-                abi: crossChainPoolAbi,
-                address: poolAddress,
-                functionName: "getCrossChainSenderAndSelector",
-                args: []
-            },
-            {
-                abi: crossChainPoolAbi,
-                address: poolAddress,
-                functionName: "getTotalProtocolBalances",
-                args: []
-            },
-            {
-                abi: crossChainPoolAbi,
-                address: poolAddress,
-                functionName: "getCrossChainBalances",
-                args: []
-            }
-            ]
 
-        }) as any,
-
-    })
 
 
 
 
     // todo need to group deposits by pool and sum up all the deposits
-    return { userDeposits }
+    return { balanceList }
 }

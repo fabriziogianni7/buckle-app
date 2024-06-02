@@ -5,20 +5,39 @@ import { useEffect, useState } from "react";
 import Pools from "./staker/Pools";
 import usePoolCreatedEvents from "@/app/hooks/usePoolCreatedEvents";
 import { Pool } from "../config/interfaces";
+import useCrossChainPool from "../hooks/useCrossChainPool";
 
 
 export default function Stake() {
   const [poolList, setPoolList] = useState<Pool[]>()
 
   const { poolCreatedEvents } = usePoolCreatedEvents()
+  const { balanceList } = useCrossChainPool()
+
+  const getPoolBalance = (poolAddress: `0x${string}`) => {
+    if (balanceList) {
+      const element = balanceList.find((el: {
+        balance: number, poolAddress: `0x${string}`
+      }) => el.poolAddress == poolAddress)
+      return element.balance
+    }
+
+    return 0
+  }
 
   useEffect(() => {
-    if (poolCreatedEvents) {
-      const logsElements: Pool[] = poolCreatedEvents?.map(((l: any) => l?.args as Pool))
+    if (poolCreatedEvents && balanceList) {
+      const logsElements: Pool[] = poolCreatedEvents?.map(((l: any) => {
+        return {
+          ...l?.args,
+          balance: getPoolBalance(l?.args.pool)
+        } as Pool
+      }
+      ))
       setPoolList(logsElements)
     }
 
-  }, [poolCreatedEvents])
+  }, [poolCreatedEvents, balanceList])
 
   return (
     <main className="flex min-h-screen flex-col justify-start p-24">

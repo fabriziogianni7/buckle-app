@@ -8,6 +8,7 @@ import { CCIP_EXPLORER_URL_ADDRESS, addressesToIcons, allowedChainSelectors, all
 import Image from 'next/image';
 import { usePathname } from "next/navigation";
 import { HSOverlay, ICollectionItem } from "preline";
+import { formatEther } from "viem";
 
 
 interface PoolsProp {
@@ -56,6 +57,7 @@ export default function Pools({ pools }: PoolsProp) {
                                     <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Token Address Source Network</th>
                                     <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Token Address Destination Network</th>
                                     <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Destination Network</th>
+                                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Total Balance Accross Chain</th>
                                     <th scope="col" className="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Action</th>
                                 </tr>
                             </thead>
@@ -128,6 +130,21 @@ export default function Pools({ pools }: PoolsProp) {
                                                 />
                                                 {
                                                     ccipSelectorsTochain[pool?.crosschainSelector!.toString() as allowedChainSelectors]
+                                                }
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200 ">
+                                            <div className="flex">
+                                                <Image
+                                                    priority
+                                                    src={addressesToIcons[pool?.tokenCurrentChain! as allowedTokens]}
+                                                    alt="deposit"
+                                                    width={20}
+                                                    height={20}
+                                                    className="mr-4"
+                                                />
+                                                {
+                                                    pool.balance ? formatEther(BigInt(pool.balance)) : 0
                                                 }
                                             </div>
                                         </td>

@@ -12,7 +12,6 @@ import { formatEther } from "viem";
 export default function Offcanvas() {
     const { userDeposits, userTeleports } = useUserTransactions()
 
-    useEffect(() => console.log("userDeposits", userDeposits))
 
     return (<div id="hs-overlay-example" className="hs-overlay hs-overlay-open:translate-x-0 hidden -translate-x-full fixed top-0 start-0 transition-all duration-300 transform h-full max-w-xs w-full z-[80] bg-white border-e dark:bg-neutral-800 dark:border-neutral-700 overflow-y-auto" tabIndex={-1}>
         <div className="flex justify-between items-center py-3 px-4 border-b dark:border-neutral-700">

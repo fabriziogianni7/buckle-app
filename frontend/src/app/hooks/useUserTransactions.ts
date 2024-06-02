@@ -95,7 +95,6 @@ export default function useUserTransactions() {
 
     }, [latestBlock, chainId])
 
-    useEffect(() => console.log("depositEvents", depositEvents))
 
     useEffect(() => {
         if (depositEvents) {

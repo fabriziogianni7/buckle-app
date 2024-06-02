@@ -21,7 +21,6 @@ export default function Deposits({ deposits }: DepositsProps) {
     const [currentChainToken, setCurrentChainToken] = useState<`0x${string}` | undefined>()
     const [crossChainToken, setCrossChainToken] = useState<`0x${string}` | undefined>()
 
-    useCrossChainPool()
 
     const path = usePathname();
     const [preline, setPreline] = useState<any>()
