@@ -18,8 +18,8 @@ export default function Stake() {
     if (balanceList) {
       const element = balanceList.find((el: {
         balance: number, poolAddress: `0x${string}`
-      }) => el.poolAddress == poolAddress)
-      return element.balance
+      }) => el?.poolAddress == poolAddress)
+      return element?.balance
     }
 
     return 0

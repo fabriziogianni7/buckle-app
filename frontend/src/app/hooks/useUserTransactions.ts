@@ -25,11 +25,13 @@ export default function useUserTransactions() {
         chainId
     })
 
-    const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
+    // const { poolCreatedEvents }: { poolCreatedEvents: any } = usePoolCreatedEvents()
 
     /////////////////////////////////
     ////// all deposit events //////
     /////////////////////////////////
+
+    // useEffect(() => { console.log("poolCreatedEvents", poolCreatedEvents) }, [poolCreatedEvents])
 
 
     useEffect(() => {
@@ -163,6 +165,8 @@ export default function useUserTransactions() {
                     }
                     const promResult = (await Promise.allSettled(promArr)).flatMap((el: any) => el.value)
                         .filter((el: any) => el != undefined)
+                    console.log("teleport prom", promResult)
+                    console.log("allPools", allPools)
                     setTeleportEvents(promResult)
                 }
 
@@ -203,24 +207,10 @@ export default function useUserTransactions() {
                     txHash: d.transactionHash
                 }
             })
+            console.log("teleports", teleports)
             setUserTeleports(teleports)
         }
     }, [teleportEvents])
-
-
-    // const { data: symbol } = useReadContracts({
-    //     abi: crossChainPoolAbi,
-    //     address: poolAddress,
-    //     functionName: "calculateAmountToRedeem",
-    //     args: [
-    //         amount
-    //     ]
-    // })
-
-
-
-
-
 
 
     // todo need to group deposits by pool and sum up all the deposits

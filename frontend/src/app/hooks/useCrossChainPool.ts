@@ -43,9 +43,12 @@ export default function useCrossChainPool() {
         if (balances && allPools) {
             const newArr = allPools.map((poolAddress: any, index: number) => {
                 const result = balances[index]?.result as any
-                return {
-                    poolAddress,
-                    balance: result[0] as any
+                if (result) {
+                    return {
+                        poolAddress,
+                        balance: result[0] as any
+                    }
+
                 }
             })
             setBalanceList(newArr)

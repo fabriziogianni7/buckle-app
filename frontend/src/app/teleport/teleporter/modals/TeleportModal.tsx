@@ -119,7 +119,7 @@ export default function TeleportModal({
             alert("wait while the deposit tx goes tru")
         }
         if (phase == "teleport" && isConfirmed) {
-            alert("The deposit was successful! yay")
+            alert("The teleport was successful! yay")
             setPhase("success")
         }
     }, [hash, isConfirming, isConfirmed])
