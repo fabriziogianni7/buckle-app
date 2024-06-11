@@ -93,4 +93,16 @@ contract CrossChainPoolTest is Test {
         uint256 ccipDepositFees = crossChainPool.getCCipFeesForDeposit(1e18);
         assertEq(ccipDepositFees, 1);
     }
+
+    function testCooldown() public deposited {
+        vm.startPrank(LP);
+
+        crossChainPool.setCooldownForLp{value: 1}(STARTING_DEPOSIT);
+        (, bool isCoolDownExpired) = crossChainPool.getCooldown(LP);
+
+        //cooldown should not be expired
+        assertEq(isCoolDownExpired, false);
+
+        vm.stopPrank();
+    }
 }
