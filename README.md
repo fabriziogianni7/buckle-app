@@ -1,5 +1,7 @@
 # Buckle App!
 
+_I'm keeping improving the project on branch `going-on-after-block-magic`_
+
 ## Summary
 
 1. [Introduction](#introduction)
