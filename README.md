@@ -2,6 +2,8 @@
 
 _I'm continuing the development of the project on branch `going-on-after-block-magic`_
 
+This Project won the [2nd place for the cross chain Chainlink Block Magic hackathon](https://devpost.com/software/buckle) and the _Best DeFi dApp of Polygon Amoy_ prize from Polygon!
+
 ## Summary
 
 1. [Introduction](#introduction)
